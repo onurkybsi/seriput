@@ -118,11 +118,15 @@ Each server response is wrapped in a binary frame:
 
 - Success: `[00][00][00000000]`
 
+---
+
 #### GET
 
 - If key exists: `[00][01][valueLen][valueBytes]`
 
 - If key does not exist: `[02][00][0]`
+
+---
 
 #### DELETE
 
