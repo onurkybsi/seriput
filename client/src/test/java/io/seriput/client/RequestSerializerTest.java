@@ -24,7 +24,7 @@ final class RequestSerializerTest {
       byte[] actualBytes = new byte[actual.remaining()];
       actual.get(actualBytes);
       byte[] expected = new byte[] {
-        Ops.GET.op(),
+        RequestOps.GET.op(),
         1,
         1,
         0, 0, 0, 9, // key length = 9
@@ -53,7 +53,7 @@ final class RequestSerializerTest {
       byte[] actualBytes = new byte[actual.remaining()];
       actual.get(actualBytes);
       byte[] expected = new byte[] {
-        Ops.PUT.op(),
+        RequestOps.PUT.op(),
         1,
         1,
         0, 0, 0, 9, // key length = 9
@@ -82,7 +82,7 @@ final class RequestSerializerTest {
       byte[] actualBytes = new byte[actual.remaining()];
       actual.get(actualBytes);
       byte[] expected = new byte[] {
-        Ops.DELETE.op(),
+        RequestOps.DELETE.op(),
         1,
         1,
         0, 0, 0, 9, // key length = 9
