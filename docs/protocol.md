@@ -1,17 +1,12 @@
 # Seriput Protocol [Draft]
 
-This document describes the **initial binary protocol** for the cache.  
-The goal is to keep the protocol simple for now, but **extensible** so it can evolve without breaking compatibility.
-
----
+This document describes the **initial binary protocol** for the cache. The goal is to keep the protocol simple for now, but **extensible** so it can evolve without breaking compatibility.
 
 ## 1. Design Principles
 
 1. **Binary and compact** — messages are framed as binary to reduce overhead.
 2. **Extensible** — serializer formats are encoded explicitly so new formats can be added later.
 3. **Simple first mindset** — keys are always `String` and values `JSON` for the first version.
-
----
 
 ## 2. Request Protocol
 
@@ -31,8 +26,6 @@ Each request is wrapped in a binary frame:
 | **keyBytes**    | variable        | Serialized key                                |
 | **valueBytes**  | variable        | Serialized value (only for `PUT`)             |
 
----
-
 ### 2.2 Operation Codes
 
 Current plan (subject to change):
@@ -43,8 +36,6 @@ Current plan (subject to change):
 | `0x02`   | PUT     |
 | `0x03`   | DELETE  |
 
----
-
 ### 2.3 Type IDs
 
 Keys and values use **separate serializers**, allowing independent evolution.
@@ -54,7 +45,6 @@ Keys and values use **separate serializers**, allowing independent evolution.
 | Type ID | Meaning                | Serializer                                    |
 |---------|------------------------|-----------------------------------------------|
 | `0x01`  | UTF-8 String (Key)     | `key.getBytes(StandardCharsets.UTF_8)`        |
-
 
 #### Value Serializers
 
@@ -113,8 +103,6 @@ Each server response is wrapped in a binary frame:
 | **valueLen**    | 4 bytes (int32) | Length of `valueBytes`                     |
 | **valueBytes**  | variable        | Serialized response value (only for `GET`) |
 
----
-
 ### 3.2 Status Codes
 
 | Status | Meaning         |
@@ -123,8 +111,6 @@ Each server response is wrapped in a binary frame:
 | `0x01` | INVALID_REQUEST |
 | `0x02` | NOT_FOUND       |
 | `0x03` | INTERNAL_ERROR  |
-
----
 
 ### 3.3 Example Responses
 
