@@ -1,3 +1,3 @@
 rootProject.name = "seriput"
 
-include("core")
+include("core", "client", "common")
