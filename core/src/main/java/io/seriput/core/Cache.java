@@ -1,4 +1,4 @@
-package io.seriput;
+package io.seriput.core;
 
 /**
  * A simple generic cache interface.
@@ -12,6 +12,7 @@ public interface Cache<K, V> {
    *
    * @param key   the key
    * @param value the value
+   * @throws NullPointerException if {@code key} or {@code value} is {@code null}
    */
   void put(K key, V value);
 
@@ -20,6 +21,7 @@ public interface Cache<K, V> {
    *
    * @param key the key
    * @return value associated with the key, or {@code null} if not found
+   * @throws NullPointerException if {@code key} is {@code null}
    */
   V get(K key);
 
@@ -28,6 +30,7 @@ public interface Cache<K, V> {
    *
    * @param key the key
    * @return {@code true} if the key was found and removed, {@code false} otherwise
+   * @throws NullPointerException if {@code key} is {@code null}
    */
   boolean remove(K key);
 
@@ -45,4 +48,9 @@ public interface Cache<K, V> {
    * @return size of the cache
    */
   int size();
+
+  /**
+   * Clears all key-value pairs from the cache.
+   */
+  void clear();
 }
