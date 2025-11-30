@@ -1,0 +1,63 @@
+package io.seriput.client;
+
+import java.nio.ByteBuffer;
+
+final class ResponseDeserializer {
+  private static final int HEADER_SIZE = 1 + 1 + 4; // status + valueTypeId + valueLength
+
+  private final ValueDeserializer valueDeserializer = new JsonUtf8ValueDeserializer();
+
+  Response tryToDeserialize(ByteBuffer buffer, Class<?> valueType) {
+    buffer.flip(); // Switch to reading mode
+    if (!isReadyForDeserialization(buffer)) {
+      buffer.compact(); // Switch back to writing mode
+      return null;
+    }
+
+    ResponseStatus status = ResponseStatus.fromByte(buffer.get());
+    ResponseValueType responseValueType = ResponseValueType.fromByte(buffer.get());
+    int valueLength = buffer.getInt();
+    byte[] valueBytes = new byte[valueLength];
+    buffer.get(valueBytes);
+    buffer.compact(); // Switch back to writing mode, leave buffer as is
+    return deserialize(valueType, status, responseValueType, valueBytes);
+  }
+
+  private <T> Response deserialize(Class<T> valueType, ResponseStatus status,
+                                   ResponseValueType responseValueType, byte[] valueBytes) {
+    if (valueBytes.length == 0 && status == ResponseStatus.OK) {
+      return new SuccessResponse<>(null);
+    }
+    if (valueBytes.length == 0) {
+      return new ErrorResponse(status, null);
+    }
+    return switch (responseValueType) {
+      case JSON_UTF8 -> {
+        if (status == ResponseStatus.OK) {
+          yield new SuccessResponse<>(valueDeserializer.deserialize(valueBytes, valueType));
+        } else {
+          yield new ErrorResponse(status, valueDeserializer.deserialize(valueBytes, ErrorResponsePayload.class));
+        }
+      }
+    };
+  }
+
+  private static boolean isReadyForDeserialization(ByteBuffer buffer) {
+    buffer.mark(); // Mark the current position
+    if (buffer.remaining() < HEADER_SIZE) {
+      buffer.reset(); // Reset to the marked position
+      return false;
+    }
+
+    buffer.get(); // Read status
+    buffer.get(); // Read valueTypeId
+    int valueLength = buffer.getInt();
+    if (buffer.remaining() < valueLength) {
+      buffer.reset(); // Reset to the marked position
+      return false;
+    }
+
+    buffer.reset(); // Reset to the marked position
+    return true;
+  }
+}
