@@ -1,6 +1,6 @@
-package io.seriput.client;
+package io.seriput.client.serialization;
 
-enum ResponseStatus {
+public enum ResponseStatus {
   OK((byte) 0x00),
   INVALID_REQUEST((byte) 0x01),
   NOT_FOUND((byte) 0x02),

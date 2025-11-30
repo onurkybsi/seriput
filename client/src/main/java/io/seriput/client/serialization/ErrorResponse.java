@@ -1,4 +1,4 @@
-package io.seriput.client;
+package io.seriput.client.serialization;
 
 record ErrorResponse(
   ResponseStatus responseStatus,

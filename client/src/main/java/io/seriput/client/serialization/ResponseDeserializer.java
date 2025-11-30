@@ -1,13 +1,14 @@
-package io.seriput.client;
+package io.seriput.client.serialization;
 
 import java.nio.ByteBuffer;
 
-final class ResponseDeserializer {
+// TODO: Add JavaDoc
+public final class ResponseDeserializer {
   private static final int HEADER_SIZE = 1 + 1 + 4; // status + valueTypeId + valueLength
 
   private final ValueDeserializer valueDeserializer = new JsonUtf8ValueDeserializer();
 
-  Response tryToDeserialize(ByteBuffer buffer, Class<?> valueType) {
+  public Response tryToDeserialize(ByteBuffer buffer, Class<?> valueType) {
     buffer.flip(); // Switch to reading mode
     if (!isReadyForDeserialization(buffer)) {
       buffer.compact(); // Switch back to writing mode

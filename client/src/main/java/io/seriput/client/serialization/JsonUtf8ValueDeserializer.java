@@ -1,4 +1,4 @@
-package io.seriput.client;
+package io.seriput.client.serialization;
 
 import io.seriput.common.ObjectMapperProvider;
 import tools.jackson.databind.ObjectMapper;

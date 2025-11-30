@@ -1,4 +1,4 @@
-package io.seriput.client;
+package io.seriput.client.serialization;
 
 enum ResponseValueType {
   JSON_UTF8((byte) 0x01);

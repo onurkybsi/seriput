@@ -1,14 +1,15 @@
-package io.seriput.client;
+package io.seriput.client.serialization;
 
 import java.nio.ByteBuffer;
 
-final class RequestSerializer<V> {
+// TODO: Add JavaDoc
+public final class RequestSerializer<V> {
   private static final int HEADER_SIZE = 1 + 1 + 1 + 4 + 4; // op + keyTypeId + valueTypeId + keyLength + valueLength
 
   private final KeySerializer<String> keySerializer = new Utf8StringKeySerializer();
   private final ValueSerializer<V> valueSerializer = new JsonUtf8ValueSerializer<>();
 
-  ByteBuffer serializeGet(String key) {
+  public ByteBuffer serializeGet(String key) {
     byte[] serializedKey = keySerializer.serialize(key);
 
     ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE + serializedKey.length);
@@ -22,7 +23,7 @@ final class RequestSerializer<V> {
     return buffer;
   }
 
-  ByteBuffer serializePut(String key, V value) {
+  public ByteBuffer serializePut(String key, V value) {
     byte[] serializedKey = keySerializer.serialize(key);
     byte[] serializedValue = valueSerializer.serialize(value);
 
@@ -38,7 +39,7 @@ final class RequestSerializer<V> {
     return buffer;
   }
 
-  ByteBuffer serializeDelete(String key) {
+  public ByteBuffer serializeDelete(String key) {
     byte[] serializedKey = keySerializer.serialize(key);
 
     ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE + serializedKey.length);

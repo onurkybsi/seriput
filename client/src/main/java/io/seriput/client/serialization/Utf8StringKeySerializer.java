@@ -1,4 +1,4 @@
-package io.seriput.client;
+package io.seriput.client.serialization;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
