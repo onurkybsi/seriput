@@ -112,11 +112,21 @@ Each server response is wrapped in a binary frame:
 | `0x02` | NOT_FOUND       |
 | `0x03` | INTERNAL_ERROR  |
 
-### 3.3 Example Responses
+### 3.3 Type IDs
+
+#### Value Deserializers
+
+| Type ID | Meaning                    | Deserializer                   |
+|---------|----------------------------|--------------------------------|
+| `0x01`  | JSON (UTF-8 encoded bytes) | Jackson `ObjectMapper` ↔ UTF-8 |
+
+### 3.4 Example Responses
 
 #### PUT
 
 - Success: `[00][00][00000000]`
+
+- If internal error: `[03][01][valueLen][valueBytes]`
 
 ---
 
@@ -126,11 +136,15 @@ Each server response is wrapped in a binary frame:
 
 - If key does not exist: `[02][00][0]`
 
+- If internal error: `[03][01][valueLen][valueBytes]`
+
 ---
 
 #### DELETE
 
 - Success: `[00][00][00000000]`
+
+- If internal error: `[03][01][valueLen][valueBytes]`
 
 ## 4. Compatibility Rules
 
