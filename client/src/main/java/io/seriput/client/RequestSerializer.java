@@ -12,7 +12,7 @@ final class RequestSerializer<V> {
     byte[] serializedKey = keySerializer.serialize(key);
 
     ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE + serializedKey.length);
-    buffer.put(RequestOps.GET.op());
+    buffer.put(RequestOp.GET.op());
     buffer.put(keySerializer.typeId());
     buffer.put(valueSerializer.typeId());
     buffer.putInt(serializedKey.length);
@@ -27,7 +27,7 @@ final class RequestSerializer<V> {
     byte[] serializedValue = valueSerializer.serialize(value);
 
     ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE + serializedKey.length + serializedValue.length);
-    buffer.put(RequestOps.PUT.op());
+    buffer.put(RequestOp.PUT.op());
     buffer.put(keySerializer.typeId());
     buffer.put(valueSerializer.typeId());
     buffer.putInt(serializedKey.length);
@@ -42,7 +42,7 @@ final class RequestSerializer<V> {
     byte[] serializedKey = keySerializer.serialize(key);
 
     ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE + serializedKey.length);
-    buffer.put(RequestOps.DELETE.op());
+    buffer.put(RequestOp.DELETE.op());
     buffer.put(keySerializer.typeId());
     buffer.put(valueSerializer.typeId());
     buffer.putInt(serializedKey.length);
