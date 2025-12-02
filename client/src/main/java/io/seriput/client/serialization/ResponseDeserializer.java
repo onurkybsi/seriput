@@ -8,13 +8,8 @@ public final class ResponseDeserializer {
 
   private final ValueDeserializer valueDeserializer = new JsonUtf8ValueDeserializer();
 
-  public Response tryToDeserialize(ByteBuffer buffer, Class<?> valueType) {
+  public Response deserialize(ByteBuffer buffer, Class<?> valueType) {
     buffer.flip(); // Switch to reading mode
-    if (!isReadyForDeserialization(buffer)) {
-      buffer.compact(); // Switch back to writing mode
-      return null;
-    }
-
     ResponseStatus status = ResponseStatus.fromByte(buffer.get());
     ResponseValueType responseValueType = ResponseValueType.fromByte(buffer.get());
     int valueLength = buffer.getInt();
@@ -22,6 +17,18 @@ public final class ResponseDeserializer {
     buffer.get(valueBytes);
     buffer.compact(); // Switch back to writing mode, leave buffer as is
     return deserialize(valueType, status, responseValueType, valueBytes);
+  }
+
+  public static int headerSize() {
+    return HEADER_SIZE;
+  }
+
+  // Assumes buffer is in writing mode (i.e., position indicates how much data has been written)
+  public static int bodySize(ByteBuffer buffer) {
+    if (buffer.position() < HEADER_SIZE) {
+      throw new IllegalArgumentException("Buffer does not contain full header yet!");
+    }
+    return buffer.getInt(2);
   }
 
   private <T> Response deserialize(Class<T> valueType, ResponseStatus status,
@@ -41,24 +48,5 @@ public final class ResponseDeserializer {
         }
       }
     };
-  }
-
-  private static boolean isReadyForDeserialization(ByteBuffer buffer) {
-    buffer.mark(); // Mark the current position
-    if (buffer.remaining() < HEADER_SIZE) {
-      buffer.reset(); // Reset to the marked position
-      return false;
-    }
-
-    buffer.get(); // Read status
-    buffer.get(); // Read valueTypeId
-    int valueLength = buffer.getInt();
-    if (buffer.remaining() < valueLength) {
-      buffer.reset(); // Reset to the marked position
-      return false;
-    }
-
-    buffer.reset(); // Reset to the marked position
-    return true;
   }
 }
