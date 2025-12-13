@@ -24,4 +24,8 @@ public final class Cache {
     Objects.requireNonNull(key, "key may not be null!");
     return cache.remove(key);
   }
+
+  void clear() {
+    cache.clear();
+  }
 }
