@@ -1,6 +1,9 @@
-package io.seriput.client.serialization;
+package io.seriput.common.serialization;
 
-enum RequestOp {
+/**
+ * Represents the request operations supported by the current protocol.
+ */
+public enum RequestOp {
   GET(0x01),
   PUT(0x02),
   DELETE(0x03);

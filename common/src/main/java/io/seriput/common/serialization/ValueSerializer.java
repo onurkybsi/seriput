@@ -1,4 +1,4 @@
-package io.seriput.client.serialization;
+package io.seriput.common.serialization;
 
 /**
  * Serializer for values.
