@@ -9,4 +9,6 @@ application {
 
 dependencies {
     implementation(project(":common"))
+
+    testImplementation("com.google.guava:guava:${Versions.GUAVA}")
 }

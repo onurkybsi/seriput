@@ -6,4 +6,5 @@ object Versions {
     const val JACKSON = "3.0.2"
     const val JUNIT = "6.0.1"
     const val LOG4J = "2.25.2"
+    const val GUAVA = "33.5.0-jre"
 }

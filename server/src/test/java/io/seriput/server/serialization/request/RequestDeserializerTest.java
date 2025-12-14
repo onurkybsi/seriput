@@ -1,5 +1,7 @@
 package io.seriput.server.serialization.request;
 
+import com.google.common.primitives.Bytes;
+import com.google.common.primitives.Ints;
 import io.seriput.server.core.Key;
 import io.seriput.server.core.KeyType;
 import io.seriput.server.core.Value;
@@ -59,14 +61,14 @@ final class RequestDeserializerTest {
     void should_Deserialize_Get_Request() {
       // given
       byte[] key = "user:1".getBytes();
-      byte[] buffer = concat(
-        new byte[] { // header
-          RequestOp.GET.op(),
-          KeyType.UTF8.typeId(),
-          (byte) 0, // no value type
+      byte[] buffer = Bytes.concat(
+        new byte[] {
+          RequestOp.GET.op(), // op
+          KeyType.UTF8.typeId(), // keyType
+          (byte) 0, // valueType, no value
         },
-        toBytes(key.length),
-        toBytes(0),
+        Ints.toByteArray(key.length),
+        Ints.toByteArray(0),
         key
       );
 
@@ -83,14 +85,14 @@ final class RequestDeserializerTest {
       // given
       byte[] key = "user:1".getBytes();
       byte[] value = "{\"name\":\"Alice\",\"age\":30}".getBytes();
-      byte[] buffer = concat(
-        new byte[] { // header
-          RequestOp.PUT.op(),
-          KeyType.UTF8.typeId(),
-          ValueType.JSON_UTF8.typeId(),
+      byte[] buffer = Bytes.concat(
+        new byte[] {
+          RequestOp.PUT.op(), // op
+          KeyType.UTF8.typeId(), // keyType
+          ValueType.JSON_UTF8.typeId(), // valueType
         },
-        toBytes(key.length),
-        toBytes(value.length),
+        Ints.toByteArray(key.length),
+        Ints.toByteArray(value.length),
         key,
         value
       );
@@ -107,14 +109,14 @@ final class RequestDeserializerTest {
     void should_Deserialize_Delete_Request() {
       // given
       byte[] key = "user:1".getBytes();
-      byte[] buffer = concat(
-        new byte[] { // header
-          RequestOp.DELETE.op(),
-          KeyType.UTF8.typeId(),
-          (byte) 0, // no value type
+      byte[] buffer = Bytes.concat(
+        new byte[] {
+          RequestOp.DELETE.op(), // op
+          KeyType.UTF8.typeId(), // keyType
+          (byte) 0, // valueType, no value
         },
-        toBytes(key.length),
-        toBytes(0),
+        Ints.toByteArray(key.length),
+        Ints.toByteArray(0),
         key
       );
 
@@ -142,14 +144,14 @@ final class RequestDeserializerTest {
     @Test
     void should_Throw_ProtocolViolationException_When_Given_Buffer_DoesNot_Contain_Valid_Op() {
       // given
-      byte[] buffer = concat(
+      byte[] buffer = Bytes.concat(
         new byte[] {
-          (byte) 0x4, // unknown op
-          KeyType.UTF8.typeId(),
-          ValueType.JSON_UTF8.typeId()
+          (byte) 0x4, // op, unknown
+          KeyType.UTF8.typeId(), // keyType
+          ValueType.JSON_UTF8.typeId() // valueType
         },
-        toBytes(0),
-        toBytes(0)
+        Ints.toByteArray(0),
+        Ints.toByteArray(0)
       );
 
       // when
@@ -163,14 +165,14 @@ final class RequestDeserializerTest {
     @Test
     void should_Throw_ProtocolViolationException_When_Given_Buffer_DoesNot_Contain_KeyTypeId() {
       // given
-      byte[] buffer = concat(
+      byte[] buffer = Bytes.concat(
         new byte[] {
-          RequestOp.GET.op(),
-          (byte) 0x2, // unknown key type
-          ValueType.JSON_UTF8.typeId()
+          RequestOp.GET.op(), // op
+          (byte) 0x2, // keyType, unknown
+          ValueType.JSON_UTF8.typeId() // valueType
         },
-        toBytes(0),
-        toBytes(0)
+        Ints.toByteArray(0),
+        Ints.toByteArray(0)
       );
 
       // when
@@ -184,14 +186,14 @@ final class RequestDeserializerTest {
     @Test
     void should_Throw_ProtocolViolationException_When_Given_Buffer_DoesNot_Contain_ValueTypeId() {
       // given
-      byte[] buffer = concat(
+      byte[] buffer = Bytes.concat(
         new byte[] {
-          RequestOp.PUT.op(),
-          KeyType.UTF8.typeId(),
-          (byte) 0x2, // unknown value type
+          RequestOp.PUT.op(), // op
+          KeyType.UTF8.typeId(), // keyType
+          (byte) 0x2, // valueType, unknown
         },
-        toBytes(0),
-        toBytes(0)
+        Ints.toByteArray(0),
+        Ints.toByteArray(0)
       );
 
       // when
@@ -201,24 +203,5 @@ final class RequestDeserializerTest {
       assertThat(thrown.getMessage()).isEqualTo("Unknown value type: 2");
       assertThat(thrown.getCause()).isNull();
     }
-  }
-
-  private static byte[] concat(byte[]... parts) {
-    int size = 0;
-    for (byte[] p : parts) {
-      size += p.length;
-    }
-
-    byte[] concatenated = new byte[size];
-    int i = 0;
-    for (byte[] p : parts) {
-      System.arraycopy(p, 0, concatenated, i, p.length);
-      i += p.length;
-    }
-    return concatenated;
-  }
-
-  private static byte[] toBytes(int value) {
-    return ByteBuffer.allocate(4).putInt(value).array();
   }
 }
