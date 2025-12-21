@@ -1,4 +1,4 @@
-package io.seriput.common.serialization;
+package io.seriput.common.serialization.request;
 
 import java.nio.ByteBuffer;
 

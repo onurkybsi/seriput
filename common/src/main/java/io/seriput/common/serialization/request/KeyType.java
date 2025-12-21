@@ -1,4 +1,4 @@
-package io.seriput.common.serialization;
+package io.seriput.common.serialization.request;
 
 /**
  * Represents the key types supported by the current protocol.

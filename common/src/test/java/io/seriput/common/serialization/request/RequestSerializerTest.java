@@ -1,4 +1,4 @@
-package io.seriput.common.serialization;
+package io.seriput.common.serialization.request;
 
 import com.google.common.primitives.Bytes;
 import org.junit.jupiter.api.Nested;
