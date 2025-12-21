@@ -1,5 +1,8 @@
-package io.seriput.client.serialization;
+package io.seriput.common.serialization.response;
 
+/**
+ * Response status codes in Seriput protocol v1.
+ */
 public enum ResponseStatus {
   OK((byte) 0x00),
   INVALID_REQUEST((byte) 0x01),
@@ -18,10 +21,14 @@ public enum ResponseStatus {
         return status;
       }
     }
-    throw new IllegalArgumentException("Unknown status byte: " + statusByte);
+    return null;
+  }
+
+  static boolean isErrorStatus(ResponseStatus status) {
+    return !OK.equals(status);
   }
 
   byte status() {
-    return status;
+    return this.status;
   }
 }
