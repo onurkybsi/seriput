@@ -14,6 +14,17 @@ public final class ResponseDeserializer {
 
   private final ValueDeserializer valueDeserializer = new JsonUtf8ValueDeserializer();
 
+  private ResponseDeserializer() {}
+
+  /**
+   * Builds a {@code ResponseDeserializer}.
+   *
+   * @return built {@code RequestSerializer} instance
+   */
+  public static ResponseDeserializer build() {
+    return new ResponseDeserializer();
+  }
+
   /**
    * Returns the size of the response header in bytes.
    *
