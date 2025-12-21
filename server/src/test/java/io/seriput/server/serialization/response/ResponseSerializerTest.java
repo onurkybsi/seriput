@@ -2,6 +2,8 @@ package io.seriput.server.serialization.response;
 
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
+import io.seriput.common.serialization.response.ResponseStatus;
+import io.seriput.common.serialization.response.ResponseValueType;
 import io.seriput.server.core.Value;
 import io.seriput.server.core.ValueType;
 import org.junit.jupiter.api.Nested;
@@ -23,7 +25,7 @@ final class ResponseSerializerTest {
       // then
       var expected = Bytes.concat(
         new byte[] { ResponseStatus.OK.status() },
-        new byte[] { ResponseValueType.from(value.type()).typeId() },
+        new byte[] { ResponseValueType.fromByte(value.type().typeId()).typeId() },
         Ints.toByteArray(value.bytes().length),
         value.bytes()
       );

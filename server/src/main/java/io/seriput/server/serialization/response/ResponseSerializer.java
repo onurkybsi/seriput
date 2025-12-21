@@ -1,11 +1,12 @@
 package io.seriput.server.serialization.response;
 
+import io.seriput.common.serialization.response.ResponseValueType;
 import io.seriput.server.core.Value;
 
 import java.nio.ByteBuffer;
 
-import static io.seriput.server.serialization.response.ResponseStatus.*;
-import static io.seriput.server.serialization.response.ResponseValueType.VOID;
+import static io.seriput.common.serialization.response.ResponseStatus.*;
+import static io.seriput.common.serialization.response.ResponseValueType.VOID;
 
 /**
  * Response deserializer for the Seriput protocol v1.
@@ -28,7 +29,7 @@ public final class ResponseSerializer {
   public static ByteBuffer ok(Value value) {
     ByteBuffer buffer = ByteBuffer.allocate(VALUE_OFFSET + value.bytes().length);
     buffer.put(OK.status());
-    buffer.put(ResponseValueType.from(value.type()).typeId());
+    buffer.put(ResponseValueType.fromByte(value.type().typeId()).typeId());
     buffer.putInt(value.bytes().length);
     buffer.put(value.bytes());
     buffer.flip(); // Switch to read mode
