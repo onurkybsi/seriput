@@ -179,7 +179,7 @@ final class SeriputConnection {
             this.selector.wakeup();
           }
         } catch (Exception e) {
-          if (e instanceof InterruptedException && !State.OPEN.equals(this.state.get())) {
+          if (e instanceof InterruptedException && State.CLOSING.equals(this.state.get())) {
             break; // Exit gracefully
           }
           logger.error("Exception occurred during handling the request!", e);
