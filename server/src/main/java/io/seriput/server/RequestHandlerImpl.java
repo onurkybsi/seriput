@@ -8,24 +8,29 @@ import io.seriput.server.serialization.request.RequestDeserializer;
 import io.seriput.server.serialization.response.ResponseSerializer;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 final class RequestHandlerImpl implements RequestHandler {
   private static final Cache cache = new Cache();
-  private static final RequestHandlerImpl instance =  new RequestHandlerImpl();
 
-  private RequestHandlerImpl() {}
+  private final ArrayList<RequestInterceptor> interceptors = new ArrayList<>();
 
-  public static RequestHandler instance() {
-    return instance;
+  RequestHandlerImpl(List<RequestInterceptor> interceptors) {
+    this.interceptors.addAll(interceptors);
   }
 
   @Override
   public ByteBuffer handle(byte[] requestPayload) {
-    return switch (RequestDeserializer.deserialize(requestPayload)) {
+    var deserialized = RequestDeserializer.deserialize(requestPayload);
+    this.interceptors.forEach(i -> i.before(requestPayload));
+    var response = switch (deserialized) {
       case GetRequest getRequest -> get(getRequest);
       case PutRequest putRequest -> put(putRequest);
       case DeleteRequest deleteRequest -> delete(deleteRequest);
     };
+    this.interceptors.forEach(i -> i.after(requestPayload, response));
+    return response;
   }
 
   private static ByteBuffer get(GetRequest request) {

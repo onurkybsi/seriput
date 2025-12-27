@@ -15,6 +15,10 @@ public enum ResponseStatus {
     this.status = status;
   }
 
+  public byte status() {
+    return this.status;
+  }
+
   static ResponseStatus fromByte(byte statusByte) {
     for (ResponseStatus status : ResponseStatus.values()) {
       if (status.status == statusByte) {
@@ -26,9 +30,5 @@ public enum ResponseStatus {
 
   static boolean isErrorStatus(ResponseStatus status) {
     return !OK.equals(status);
-  }
-
-  byte status() {
-    return this.status;
   }
 }

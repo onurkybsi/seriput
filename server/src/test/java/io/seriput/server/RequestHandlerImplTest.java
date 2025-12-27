@@ -8,6 +8,8 @@ import io.seriput.server.serialization.response.ResponseSerializer;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 final class RequestHandlerImplTest {
@@ -16,8 +18,8 @@ final class RequestHandlerImplTest {
     @Test
     void should_Return_Singleton_Instance() {
       // given & when
-      RequestHandler first = RequestHandlerImpl.instance();
-      RequestHandler second = RequestHandlerImpl.instance();
+      RequestHandler first = new RequestHandlerImpl(Collections.emptyList());
+      RequestHandler second = new RequestHandlerImpl(Collections.emptyList());
 
       // then
       assertThat(second).isSameAs(first);
@@ -26,7 +28,7 @@ final class RequestHandlerImplTest {
 
   @Nested
   class Handle {
-    private static final RequestHandler underTest = RequestHandlerImpl.instance();
+    private static final RequestHandler underTest = new RequestHandlerImpl(Collections.emptyList());
 
     @Nested
     class Get {

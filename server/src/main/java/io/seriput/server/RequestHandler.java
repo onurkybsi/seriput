@@ -3,7 +3,7 @@ package io.seriput.server;
 import java.nio.ByteBuffer;
 
 @FunctionalInterface
-interface RequestHandler {
+public interface RequestHandler {
   /**
    * Handles the given request payload and returns the response payload.
    *

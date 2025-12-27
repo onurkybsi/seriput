@@ -13,7 +13,7 @@ public enum ResponseValueType {
     this.typeId = typeId;
   }
 
-  static ResponseValueType fromByte(byte typeId) {
+  public static ResponseValueType fromByte(byte typeId) {
     for (ResponseValueType valueType : values()) {
       if (valueType.typeId == typeId) {
         return valueType;
@@ -22,7 +22,7 @@ public enum ResponseValueType {
     return null;
   }
 
-  byte valueTypeId() {
+  public byte typeId() {
     return typeId;
   }
 }
