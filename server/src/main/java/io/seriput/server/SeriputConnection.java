@@ -179,7 +179,8 @@ final class SeriputConnection {
             this.selector.wakeup();
           }
         } catch (Exception e) {
-          if (e instanceof InterruptedException && State.CLOSING.equals(this.state.get())) {
+          if (e instanceof InterruptedException && this.state.get().isClosureInProgress()) {
+            logger.debug("Worked thread interrupted...");
             break; // Exit gracefully
           }
           logger.error("Exception occurred during handling the request!", e);
@@ -196,6 +197,10 @@ final class SeriputConnection {
   enum State {
     OPEN,
     CLOSING,
-    CLOSED
+    CLOSED;
+
+    boolean isClosureInProgress() {
+      return this == CLOSING || this == CLOSED;
+    }
   }
 }

@@ -1,10 +1,13 @@
 plugins {
     id("java-library")
+    id("jacoco")
 }
 
 repositories { mavenCentral() }
 
 java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+
+jacoco { toolVersion = Versions.JACOCO }
 
 dependencies {
     implementation(platform("org.apache.logging.log4j:log4j-bom:${Versions.LOG4J}"))
@@ -17,4 +20,14 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-tasks.withType<Test> { useJUnitPlatform() }
+tasks.withType<Test> {
+    useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.withType<JacocoReport>().configureEach {
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
