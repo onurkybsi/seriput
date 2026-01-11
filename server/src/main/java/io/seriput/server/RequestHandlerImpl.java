@@ -12,8 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class RequestHandlerImpl implements RequestHandler {
-  private static final Cache cache = new Cache();
-
+  private final Cache cache = new Cache();
   private final ArrayList<RequestInterceptor> interceptors = new ArrayList<>();
 
   RequestHandlerImpl(List<RequestInterceptor> interceptors) {
@@ -33,7 +32,7 @@ final class RequestHandlerImpl implements RequestHandler {
     return response;
   }
 
-  private static ByteBuffer get(GetRequest request) {
+  private ByteBuffer get(GetRequest request) {
     var value = cache.get(request.key());
     if (value == null) {
       return ResponseSerializer.notFound();
@@ -42,12 +41,12 @@ final class RequestHandlerImpl implements RequestHandler {
     }
   }
 
-  private static ByteBuffer put(PutRequest request) {
+  private ByteBuffer put(PutRequest request) {
     cache.put(request.key(), request.value());
     return ResponseSerializer.ok();
   }
 
-  private static ByteBuffer delete(DeleteRequest request) {
+  private ByteBuffer delete(DeleteRequest request) {
     var value = cache.delete(request.key());
     if (value == null) {
       return ResponseSerializer.notFound();

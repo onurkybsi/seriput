@@ -212,6 +212,10 @@ final class SeriputServer implements AutoCloseable {
       } finally {
         seriputConnection.state(SeriputConnection.State.CLOSED);
         this.connections.get(seriputConnection.client()).remove(seriputConnection);
+        logger.debug("{} connection closed.", seriputConnection.connection());
+        if (this.connections.get(seriputConnection.client()).isEmpty()) {
+          this.connections.remove(seriputConnection.client());
+        }
       }
     }
   }

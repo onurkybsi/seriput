@@ -19,6 +19,8 @@ public final class ResponseSerializer {
     new byte[] { NOT_FOUND.status(), VOID.typeId(), 0x00, 0x00, 0x00, 0x00 /* valueLength */ };
   private static final byte[] voidInternalErrorResponse =
     new byte[] { INTERNAL_ERROR.status(), VOID.typeId(), 0x00, 0x00, 0x00, 0x00 /* valueLength */ };
+  public static int HEADER_SIZE = VALUE_OFFSET;
+  public static int VALUE_LENGTH_OFFSET = 2;
 
   /**
    * Serializes and {@code OK} response with given {@code value}.

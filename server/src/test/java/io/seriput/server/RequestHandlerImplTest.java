@@ -13,121 +13,105 @@ import java.util.Collections;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 final class RequestHandlerImplTest {
+  private static final RequestHandler underTest = new RequestHandlerImpl(Collections.emptyList());
+
   @Nested
-  class Instance {
+  class Get {
     @Test
-    void should_Return_Singleton_Instance() {
-      // given & when
-      RequestHandler first = new RequestHandlerImpl(Collections.emptyList());
-      RequestHandler second = new RequestHandlerImpl(Collections.emptyList());
+    void should_Return_Ok_Response_When_There_Is_A_Value_By_GivenKey() {
+      // given
+      String key = "user:1";
+      Object value = new Object() {
+        public final String name = "John Doe";
+        public final int age = 30;
+      };
+      underTest.handle(RequestFixtures.serializePut(key, value));
+      var requestPayload = RequestFixtures.serializeGet(key);
+
+      // when
+      var actual = underTest.handle(requestPayload);
 
       // then
-      assertThat(second).isSameAs(first);
+      var expectedValue = new Value(ValueType.JSON_UTF8, ObjectMapperProvider.getInstance().writeValueAsBytes(value));
+      var expected = ResponseSerializer.ok(expectedValue);
+      assertThat(actual.array()).isEqualTo(expected.array());
+    }
+
+    @Test
+    void should_Return_NotFound_Response_When_There_Is_No_Value_By_GivenKey() {
+      // given
+      String key = "user:1";
+      var requestPayload = RequestFixtures.serializeGet(key);
+
+      // when
+      var actual = underTest.handle(requestPayload);
+
+      // then
+      var expected = ResponseSerializer.notFound();
+      assertThat(actual.array()).isEqualTo(expected.array());
     }
   }
 
   @Nested
-  class Handle {
-    private static final RequestHandler underTest = new RequestHandlerImpl(Collections.emptyList());
+  class Put {
+    @Test
+    void should_Return_Ok_Response_When_Given_KeyValue_Stored_Successfully() {
+      // given
+      String key = "user:1";
+      Object value = new Object() {
+        public final String name = "John Doe";
+        public final int age = 30;
+      };
+      var requestPayload = RequestFixtures.serializePut(key, value);
 
-    @Nested
-    class Get {
-      @Test
-      void should_Return_Ok_Response_When_There_Is_A_Value_By_GivenKey() {
-        // given
-        String key = "user:1";
-        Object value = new Object() {
-          public final String name = "John Doe";
-          public final int age = 30;
-        };
-        underTest.handle(RequestFixtures.serializePut(key, value));
-        var requestPayload = RequestFixtures.serializeGet(key);
+      // when
+      var actual = underTest.handle(requestPayload);
 
-        // when
-        var actual = underTest.handle(requestPayload);
+      // then
+      var expected = ResponseSerializer.ok();
+      assertThat(actual.array()).isEqualTo(expected.array());
+      var stored = underTest.handle(RequestFixtures.serializeGet(key));
+      var expectedStoredValue = new Value(ValueType.JSON_UTF8, ObjectMapperProvider.getInstance().writeValueAsBytes(value));
+      assertThat(stored.array()).isEqualTo(ResponseSerializer.ok(expectedStoredValue).array());
+    }
+  }
 
-        // then
-        var expectedValue = new Value(ValueType.JSON_UTF8, ObjectMapperProvider.getInstance().writeValueAsBytes(value));
-        var expected = ResponseSerializer.ok(expectedValue);
-        assertThat(actual.array()).isEqualTo(expected.array());
-      }
+  @Nested
+  class Delete {
+    @Test
+    void should_Return_Ok_Response_When_There_Is_A_Value_Delete_By_GivenKey() {
+      // given
+      String key = "user:1";
+      Object value = new Object() {
+        public final String name = "John Doe";
+        public final int age = 30;
+      };
+      underTest.handle(RequestFixtures.serializePut(key, value));
+      var requestPayload = RequestFixtures.serializeDelete(key);
 
-      @Test
-      void should_Return_NotFound_Response_When_There_Is_No_Value_By_GivenKey() {
-        // given
-        String key = "user:1";
-        var requestPayload = RequestFixtures.serializeGet(key);
+      // when
+      var actual = underTest.handle(requestPayload);
 
-        // when
-        var actual = underTest.handle(requestPayload);
-
-        // then
-        var expected = ResponseSerializer.notFound();
-        assertThat(actual.array()).isEqualTo(expected.array());
-      }
+      // then
+      var expected = ResponseSerializer.ok();
+      assertThat(actual.array()).isEqualTo(expected.array());
+      var deleted = underTest.handle(RequestFixtures.serializeGet(key));
+      var expectedDeleted = ResponseSerializer.notFound();
+      assertThat(deleted.array()).isEqualTo(expectedDeleted.array());
     }
 
-    @Nested
-    class Put {
-      @Test
-      void should_Return_Ok_Response_When_Given_KeyValue_Stored_Successfully() {
-        // given
-        String key = "user:1";
-        Object value = new Object() {
-          public final String name = "John Doe";
-          public final int age = 30;
-        };
-        var requestPayload = RequestFixtures.serializePut(key, value);
+    @Test
+    void should_Return_NotFound_Response_When_There_Is_No_Value_To_Delete_By_GivenKey() {
+      // given
+      String key = "user:1";
+      var requestPayload = RequestFixtures.serializeDelete(key);
 
-        // when
-        var actual = underTest.handle(requestPayload);
+      // when
+      var actual = underTest.handle(requestPayload);
 
-        // then
-        var expected = ResponseSerializer.ok();
-        assertThat(actual.array()).isEqualTo(expected.array());
-        var stored = underTest.handle(RequestFixtures.serializeGet(key));
-        var expectedStoredValue = new Value(ValueType.JSON_UTF8, ObjectMapperProvider.getInstance().writeValueAsBytes(value));
-        assertThat(stored.array()).isEqualTo(ResponseSerializer.ok(expectedStoredValue).array());
-      }
-    }
-
-    @Nested
-    class Delete {
-      @Test
-      void should_Return_Ok_Response_When_There_Is_A_Value_Delete_By_GivenKey() {
-        // given
-        String key = "user:1";
-        Object value = new Object() {
-          public final String name = "John Doe";
-          public final int age = 30;
-        };
-        underTest.handle(RequestFixtures.serializePut(key, value));
-        var requestPayload = RequestFixtures.serializeDelete(key);
-
-        // when
-        var actual = underTest.handle(requestPayload);
-
-        // then
-        var expected = ResponseSerializer.ok();
-        assertThat(actual.array()).isEqualTo(expected.array());
-        var deleted = underTest.handle(RequestFixtures.serializeGet(key));
-        var expectedDeleted = ResponseSerializer.notFound();
-        assertThat(deleted.array()).isEqualTo(expectedDeleted.array());
-      }
-
-      @Test
-      void should_Return_NotFound_Response_When_There_Is_No_Value_To_Delete_By_GivenKey() {
-        // given
-        String key = "user:1";
-        var requestPayload = RequestFixtures.serializeDelete(key);
-
-        // when
-        var actual = underTest.handle(requestPayload);
-
-        // then
-        var expected = ResponseSerializer.notFound();
-        assertThat(actual.array()).isEqualTo(expected.array());
-      }
+      // then
+      var expected = ResponseSerializer.notFound();
+      assertThat(actual.array()).isEqualTo(expected.array());
     }
   }
 }

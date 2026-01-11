@@ -1,5 +1,12 @@
 package io.seriput.server.fixture;
 
+import io.seriput.common.serialization.request.KeyType;
+import io.seriput.common.serialization.request.RequestSerializer;
+import io.seriput.common.serialization.request.ValueType;
+import io.seriput.common.serialization.response.Response;
+import io.seriput.common.serialization.response.ResponseDeserializer;
+import io.seriput.server.serialization.response.ResponseSerializer;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -7,6 +14,9 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 
 public final class SeriputClient implements Closeable {
+  private static final RequestSerializer<String, Object> serializer = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8);
+  private static final ResponseDeserializer deserializer = ResponseDeserializer.build();
+
   private final String host;
   private final int port;
   private final Socket socket = new Socket();
@@ -18,6 +28,11 @@ public final class SeriputClient implements Closeable {
 
   public static SeriputClient of(String host, int port) {
     return new SeriputClient(host, port);
+  }
+
+  @Override
+  public void close() throws IOException {
+    this.socket.close();
   }
 
   public int localPort() {
@@ -55,8 +70,38 @@ public final class SeriputClient implements Closeable {
     return ByteBuffer.wrap(this.socket.getInputStream().readNBytes(bytes));
   }
 
-  @Override
-  public void close() throws IOException {
-    this.socket.close();
+  public <T> Response<?> get(String key, Class<T> valueType) throws IOException {
+    ByteBuffer request = serializer.serializeGet(key);
+    byte[] requestBytes = new byte[request.remaining()];
+    request.get(requestBytes);
+    write(requestBytes);
+    return readResponse(valueType);
+  }
+
+  public Response<?> put(String key, Object value) throws IOException {
+    ByteBuffer request = serializer.serializePut(key, value);
+    byte[] requestBytes = new byte[request.remaining()];
+    request.get(requestBytes);
+    write(requestBytes);
+    return readResponse(null);
+  }
+
+  public Response<?> delete(String key) throws IOException {
+    ByteBuffer request = serializer.serializeDelete(key);
+    byte[] requestBytes = new byte[request.remaining()];
+    request.get(requestBytes);
+    write(requestBytes);
+    return readResponse(null);
+  }
+
+  private Response<?> readResponse(Class<?> valueType) throws IOException {
+    ByteBuffer responseHeader = read(ResponseSerializer.HEADER_SIZE);
+    int length = responseHeader.getInt(ResponseSerializer.VALUE_LENGTH_OFFSET);
+    ByteBuffer responseBody = read(length);
+    ByteBuffer response = ByteBuffer.allocate(responseHeader.remaining() + responseBody.remaining());
+    response.put(responseHeader);
+    response.put(responseBody);
+    response.flip();
+    return deserializer.deserialize(response, valueType);
   }
 }
