@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Seriput server that manages the Seriput connections and the event loop.
  */
-final class SeriputServer implements AutoCloseable {
+public final class SeriputServer implements AutoCloseable {
   private static final Logger logger = LogManager.getLogger(SeriputServer.class);
 
   // region Fields
@@ -28,6 +28,13 @@ final class SeriputServer implements AutoCloseable {
   private final Thread serverThread = new Thread(this::startEventLoop, "server");
   private final AtomicReference<State> state = new AtomicReference<>(State.READY);
   // endregion
+
+  public SeriputServer(int port) throws IOException {
+    this.channel = ServerSocketChannel.open();
+    this.port = port;
+    this.requestHandler = new RequestHandlerImpl(Collections.emptyList());
+    this.selector = Selector.open();
+  }
 
   SeriputServer(int port, RequestHandler requestHandler) throws IOException {
     this.channel = ServerSocketChannel.open();
