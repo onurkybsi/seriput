@@ -12,7 +12,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 final class ResponseDeserializerTest {
   private static final String TEST_VALUE = "{\"firstName\":\"John\",\"lastName\":\"Doe\"}";
 
-  private static final ResponseDeserializer underTest = new ResponseDeserializer();
+  private static final ResponseDeserializer underTest = ResponseDeserializer.build();
 
   @Nested
   class Deserialize {
@@ -21,7 +21,7 @@ final class ResponseDeserializerTest {
       // given
       ByteBuffer buffer = ByteBuffer.allocate(6 + TEST_VALUE.length());
       buffer.put(ResponseStatus.OK.status());
-      buffer.put(ResponseValueType.JSON_UTF8.valueTypeId());
+      buffer.put(ResponseValueType.JSON_UTF8.typeId());
       buffer.putInt(TEST_VALUE.length());
       buffer.put(TEST_VALUE.getBytes(StandardCharsets.UTF_8));
       buffer.flip();
@@ -42,7 +42,7 @@ final class ResponseDeserializerTest {
       // given
       ByteBuffer buffer = ByteBuffer.allocate(6 + TEST_VALUE.length());
       buffer.put(ResponseStatus.OK.status());
-      buffer.put(ResponseValueType.JSON_UTF8.valueTypeId());
+      buffer.put(ResponseValueType.JSON_UTF8.typeId());
       buffer.flip();
 
       // when & then
@@ -55,7 +55,7 @@ final class ResponseDeserializerTest {
       // given
       ByteBuffer buffer = ByteBuffer.allocate(6 + TEST_VALUE.length());
       buffer.put((byte) 4);
-      buffer.put(ResponseValueType.JSON_UTF8.valueTypeId());
+      buffer.put(ResponseValueType.JSON_UTF8.typeId());
       buffer.putInt(TEST_VALUE.length());
       buffer.put(TEST_VALUE.getBytes(StandardCharsets.UTF_8));
       buffer.flip();
@@ -87,7 +87,7 @@ final class ResponseDeserializerTest {
       // given
       ByteBuffer buffer = ByteBuffer.allocate(6 + TEST_VALUE.length());
       buffer.put(ResponseStatus.OK.status());
-      buffer.put(ResponseValueType.JSON_UTF8.valueTypeId());
+      buffer.put(ResponseValueType.JSON_UTF8.typeId());
       buffer.putInt(TEST_VALUE.length());
       buffer.flip();
       Class<?> valueType = TestType.class;
@@ -117,7 +117,7 @@ final class ResponseDeserializerTest {
       // given
       ByteBuffer buffer = ByteBuffer.allocate(6 + TEST_VALUE.length());
       buffer.put(ResponseStatus.OK.status());
-      buffer.put(ResponseValueType.JSON_UTF8.valueTypeId());
+      buffer.put(ResponseValueType.JSON_UTF8.typeId());
       buffer.putInt(TEST_VALUE.length());
       buffer.put(TEST_VALUE.getBytes(StandardCharsets.UTF_8));
       buffer.flip();
@@ -134,7 +134,7 @@ final class ResponseDeserializerTest {
       // given
       ByteBuffer buffer = ByteBuffer.allocate(6 + TEST_VALUE.length());
       buffer.put(ResponseStatus.OK.status());
-      buffer.put(ResponseValueType.JSON_UTF8.valueTypeId());
+      buffer.put(ResponseValueType.JSON_UTF8.typeId());
       buffer.flip();
 
       // when & then

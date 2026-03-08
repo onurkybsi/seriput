@@ -47,6 +47,7 @@ public final class SeriputClient implements Closeable {
     }
     try {
       this.socket.connect(new InetSocketAddress(this.host, this.port));
+      this.socket.setTcpNoDelay(true);
       return true;
     } catch (IOException e) {
       return false;
