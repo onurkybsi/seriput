@@ -8,6 +8,7 @@
 
     <Loggers>
         <Logger name="io.seriput.server" level="WARN" additivity="false"/>
+        <Logger name="io.seriput.client" level="WARN" additivity="false"/>
 
         <Root level="DEBUG">
             <AppenderRef ref="console" />

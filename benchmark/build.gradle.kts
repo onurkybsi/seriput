@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":client"))
     implementation(project(":common"))
     implementation(project(":server"))
     implementation("org.hdrhistogram:HdrHistogram:2.1.12")

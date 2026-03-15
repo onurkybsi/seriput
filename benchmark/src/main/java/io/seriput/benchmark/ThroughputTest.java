@@ -5,6 +5,7 @@ import org.HdrHistogram.Recorder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import io.seriput.client.SeriputClient;
 import io.seriput.common.ObjectMapperProvider;
 import io.seriput.server.SeriputServer;
 
@@ -13,8 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
@@ -23,11 +23,10 @@ import java.util.concurrent.locks.LockSupport;
  * Open-loop throughput benchmark for SeriputServer.
  *
  * <p>
- * Requests are generated at a fixed target rate ({@link #TARGET_RPS}) using a
- * virtual-thread
- * scheduler, regardless of server response time. This avoids coordinated
- * omission: when the server
- * is slow, in-flight requests accumulate and latency is correctly captured.
+ * Requests are generated at a fixed target rate ({@link #TARGET_RPS})
+ * regardless of server response time. This avoids coordinated omission: when
+ * the server is slow, in-flight requests accumulate and latency is correctly
+ * captured.
  *
  * <p>
  * Metrics collected:
@@ -40,49 +39,44 @@ import java.util.concurrent.locks.LockSupport;
 final class ThroughputTest {
   private static final int PORT = 9090;
   private static final int CONCURRENCY = 128;
-  private static final int TARGET_RPS = 87_000;
-  private static final long INTERVAL_NANOS = 1_000_000_000L / TARGET_RPS;
   private static final int WARMUP_SEC = 30;
   private static final int TEST_SEC = 120;
+  private static final int TARGET_RPS = 130_000;
+  private static final long INTERVAL_NANOS = 1_000_000_000L / TARGET_RPS;
   private static final long MAX_LATENCY_MICROS = TimeUnit.SECONDS.toMicros(10);
-  private static final String BENCHMARK_KEY = "baseline-key";
+  private static final String BENCHMARK_KEY = "k";
   private static final String RESULTS_FILE = "benchmark-results.jsonl";
 
   private static final Logger logger = LogManager.getLogger(ThroughputTest.class);
 
   public static void main() throws Exception {
-    logger.info("Starting Seriput server on port {}...", PORT);
-    SeriputServer server = new SeriputServer(PORT); // NOSONAR
-    server.start();
-    logger.info("Server started. Running benchmark...");
-
-    try {
-      runTestWithPhases();
+    try (SeriputServer server = new SeriputServer(PORT)) {
+      logger.info("Starting Seriput server on port {}...", PORT);
+      server.start();
+      logger.info("Server started. Running benchmark...");
+      run();
     } finally {
       logger.info("Benchmark complete. Shutting down the server...");
-      server.close();
-      server.awaitShutdown();
     }
   }
 
-  private static void runTestWithPhases() throws InterruptedException, IOException {
-    var clients = buildClientPool();
+  @SuppressWarnings("java:S2629")
+  private static void run() throws Exception {
+    var client = buildClient();
 
     // Pre-populate the key so GETs hit the happy path during the benchmark
     logger.info("Pre-populating benchmark key '{}'...", BENCHMARK_KEY);
-    var client = clients.take();
-    client.put(BENCHMARK_KEY, "value");
-    clients.put(client);
+    client.put(BENCHMARK_KEY, "v").join();
 
     try {
       // Warm-up: open-loop at target RPS, no metrics collected
       logger.info("Starting warm-up phase ({} s)...", WARMUP_SEC);
-      runPhase(clients, WARMUP_SEC, null);
+      runPhase(client, WARMUP_SEC, null);
       logger.info("Warm-up complete.");
 
       logger.info("Starting measurement phase ({} s)...", TEST_SEC);
       Measurement m = new Measurement();
-      runPhase(clients, TEST_SEC, m);
+      runPhase(client, TEST_SEC, m);
       logger.info("Measurement phase complete.");
 
       BenchmarkResult result = BenchmarkResult.of(m);
@@ -96,14 +90,14 @@ final class ThroughputTest {
       logger.info("p99 latency:   {} ms", String.format("%.3f", result.p99Ms()));
       logger.info("Error rate:    {}%", String.format("%.2f", result.errorRatePct()));
     } finally {
-      close(clients);
+      client.close();
     }
   }
 
-  private static void runPhase(ArrayBlockingQueue<SeriputClient> pool, int durationSec, Measurement measurementOrNull)
+  private static void runPhase(SeriputClient client, int durationSec, Measurement measurementOrNull)
       throws InterruptedException {
-    AtomicBoolean shouldStop = new AtomicBoolean(false);
-    Thread loadGeneratorThread = new Thread(() -> {
+    var shouldStop = new AtomicBoolean(false);
+    var loadGeneratorThread = new Thread(() -> {
       long nextFireNanos = System.nanoTime();
       while (!shouldStop.get()) {
         LockSupport.parkNanos(nextFireNanos - System.nanoTime());
@@ -111,86 +105,45 @@ final class ThroughputTest {
           break;
         }
 
-        Thread.ofVirtual().start(() -> executeRequest(pool, measurementOrNull));
+        fireRequest(client, measurementOrNull, shouldStop);
         nextFireNanos += INTERVAL_NANOS;
       }
     }, "load-generator");
     loadGeneratorThread.start();
-
     long startNanos = System.nanoTime();
+
     Thread.sleep(durationSec * 1_000L);
-    long elapsedNanos = System.nanoTime() - startNanos;
+    
     if (measurementOrNull != null) {
-      measurementOrNull.elapsedNanos = elapsedNanos;
+      measurementOrNull.elapsedNanos = System.nanoTime() - startNanos;
     }
     shouldStop.set(true);
     loadGeneratorThread.join();
-
-    drain(pool);
   }
 
-  private static void executeRequest(BlockingQueue<SeriputClient> pool, Measurement measurementOrNull) {
-    SeriputClient client;
-    try {
-      client = pool.take();
-    } catch (InterruptedException _) {
-      Thread.currentThread().interrupt();
-      return;
-    }
-    long start = System.nanoTime();
-
-    try {
-      client.get(BENCHMARK_KEY, String.class);
-      if (measurementOrNull != null) {
-        long micros = (System.nanoTime() - start) / 1_000L;
-        measurementOrNull.recorder.recordValue(Math.min(micros, MAX_LATENCY_MICROS));
-        measurementOrNull.success.increment();
-      }
-    } catch (Exception e) {
-      if (measurementOrNull != null) {
-        measurementOrNull.errors.increment();
-        logger.warn("Request failed: {}", e.getMessage());
-      }
-    } finally {
-      try {
-        pool.put(client);
-      } catch (InterruptedException _) {
-        Thread.currentThread().interrupt();
-      }
-    }
+  private static void fireRequest(SeriputClient client, Measurement measurementOrNull, AtomicBoolean shouldStop) {
+    final long startNanos = System.nanoTime();
+    client.get(BENCHMARK_KEY, String.class)
+        .whenComplete((result, throwable) -> {
+          if (shouldStop.get() || measurementOrNull == null) {
+            return;
+          }
+          if (throwable != null) {
+            measurementOrNull.errors.increment();
+            logger.warn("Request failed: {}", throwable.getMessage());
+          } else {
+            long micros = (System.nanoTime() - startNanos) / 1_000L;
+            measurementOrNull.recorder.recordValue(Math.min(micros, MAX_LATENCY_MICROS));
+            measurementOrNull.success.increment();
+          }
+        });
   }
 
-  private static ArrayBlockingQueue<SeriputClient> buildClientPool() {
-    logger.info("Building client pool ({} connections) on localhost:{}...", CONCURRENCY, PORT);
-    var clients = new ArrayList<SeriputClient>(CONCURRENCY);
-    for (int i = 0; i < CONCURRENCY; i++) {
-      var client = SeriputClient.of("localhost", PORT);
-      while (!client.tryToConnect()) {
-        Thread.yield();
-      }
-      clients.add(client);
-    }
-    logger.info("Client pool ready.");
-    return new ArrayBlockingQueue<>(CONCURRENCY, false, clients);
-  }
-
-  private static void drain(ArrayBlockingQueue<SeriputClient> clientPool) throws InterruptedException {
-    var drained = new ArrayList<SeriputClient>(CONCURRENCY);
-    for (int i = 0; i < CONCURRENCY; i++) {
-      drained.add(clientPool.take());
-    }
-    clientPool.addAll(drained);
-  }
-
-  private static void close(ArrayBlockingQueue<SeriputClient> clientPool) throws InterruptedException {
-    logger.info("Closing {} client connections...", CONCURRENCY);
-    for (int i = 0; i < CONCURRENCY; i++) {
-      try {
-        clientPool.take().close();
-      } catch (IOException _) {
-        /* best-effort close */
-      }
-    }
+  private static SeriputClient buildClient() throws IOException {
+    logger.info("Building SeriputClient with pool size {} on localhost:{}...", CONCURRENCY, PORT);
+    return SeriputClient.builder("localhost", PORT)
+        .poolSize(CONCURRENCY)
+        .build();
   }
 
   private static void persistResult(BenchmarkResult result) {
