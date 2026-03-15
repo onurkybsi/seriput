@@ -6,7 +6,7 @@ package io.seriput.common.serialization.response;
  * @param errorPayload error value
  */
 public record ErrorResponse(ResponseStatus responseStatus,
-                            ErrorResponsePayload errorPayload) implements Response<ErrorResponsePayload> {
+    ErrorResponsePayload errorPayload) implements Response<ErrorResponsePayload> {
   @Override
   public ResponseStatus status() {
     return responseStatus;
