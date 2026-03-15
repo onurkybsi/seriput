@@ -3,8 +3,8 @@ package io.seriput.client.exception;
 import java.util.Objects;
 
 /**
- * Exception thrown when an operation could not be completed because the client
- * has been closed.
+ * Exception thrown when an operation could not be completed because the TCP
+ * connection is closed.
  */
 public final class ConnectionClosedException extends SeriputClientException {
   public ConnectionClosedException(String message) {
