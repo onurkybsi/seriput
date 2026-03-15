@@ -13,7 +13,7 @@ public final class InvalidRequestException extends SeriputClientException {
   @Getter
   private final Integer errorCode;
 
-  InvalidRequestException(String message, Integer errorCode) {
+  public InvalidRequestException(String message, Integer errorCode) {
     super(message);
     this.errorCode = errorCode;
   }

@@ -14,7 +14,7 @@ public final class NotFoundException extends SeriputClientException {
   @Getter
   private final Integer errorCode;
 
-  NotFoundException(String message, Integer errorCode) {
+  public NotFoundException(String message, Integer errorCode) {
     super(message);
     this.errorCode = errorCode;
   }

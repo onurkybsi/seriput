@@ -11,4 +11,5 @@ object Versions {
     const val LOMBOK = "1.18.42"
     const val MOCKITO = "5.21.0"
     const val AWAITILITY = "4.3.0"
+    const val TESTCONTAINERS = "1.20.4"
 }

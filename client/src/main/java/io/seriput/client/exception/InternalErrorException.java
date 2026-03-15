@@ -14,7 +14,7 @@ public final class InternalErrorException extends SeriputClientException {
   @Getter
   private final Integer errorCode;
 
-  InternalErrorException(String message, Integer errorCode) {
+  public InternalErrorException(String message, Integer errorCode) {
     super(message);
     this.errorCode = errorCode;
   }
