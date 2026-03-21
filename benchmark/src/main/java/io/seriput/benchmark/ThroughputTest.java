@@ -16,6 +16,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
 
@@ -41,7 +42,7 @@ final class ThroughputTest {
   private static final int CONCURRENCY = 128;
   private static final int WARMUP_SEC = 30;
   private static final int TEST_SEC = 120;
-  private static final int TARGET_RPS = 130_000;
+  private static final int TARGET_RPS = 120_000;
   private static final long INTERVAL_NANOS = 1_000_000_000L / TARGET_RPS;
   private static final long MAX_LATENCY_MICROS = TimeUnit.SECONDS.toMicros(10);
   private static final String BENCHMARK_KEY = "k";
@@ -105,7 +106,7 @@ final class ThroughputTest {
           break;
         }
 
-        fireRequest(client, measurementOrNull, shouldStop);
+        fireRequest(client, measurementOrNull);
         nextFireNanos += INTERVAL_NANOS;
       }
     }, "load-generator");
@@ -113,19 +114,32 @@ final class ThroughputTest {
     long startNanos = System.nanoTime();
 
     Thread.sleep(durationSec * 1_000L);
-    
-    if (measurementOrNull != null) {
-      measurementOrNull.elapsedNanos = System.nanoTime() - startNanos;
-    }
     shouldStop.set(true);
     loadGeneratorThread.join();
+
+    if (measurementOrNull != null) {
+      logger.info("Waiting for the remaining {} inflight requests...", measurementOrNull.inFlight.get());
+      long drainTimeoutNanos = TimeUnit.SECONDS.toNanos(10);
+      long drainStart = System.nanoTime();
+      while (measurementOrNull.inFlight.get() > 0) {
+        if (System.nanoTime() - drainStart > drainTimeoutNanos) {
+          logger.warn("Drain timed out with {} in-flight requests remaining", measurementOrNull.inFlight.get());
+          break;
+        }
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
+      }
+      measurementOrNull.elapsedNanos = System.nanoTime() - startNanos;
+    }
   }
 
-  private static void fireRequest(SeriputClient client, Measurement measurementOrNull, AtomicBoolean shouldStop) {
+  private static void fireRequest(SeriputClient client, Measurement measurementOrNull) {
+    if (measurementOrNull != null) {
+      measurementOrNull.inFlight.incrementAndGet();
+    }
     final long startNanos = System.nanoTime();
     client.get(BENCHMARK_KEY, String.class)
         .whenComplete((result, throwable) -> {
-          if (shouldStop.get() || measurementOrNull == null) {
+          if (measurementOrNull == null) {
             return;
           }
           if (throwable != null) {
@@ -136,6 +150,7 @@ final class ThroughputTest {
             measurementOrNull.recorder.recordValue(Math.min(micros, MAX_LATENCY_MICROS));
             measurementOrNull.success.increment();
           }
+          measurementOrNull.inFlight.decrementAndGet();
         });
   }
 
@@ -160,6 +175,7 @@ final class ThroughputTest {
     final Recorder recorder = new Recorder(MAX_LATENCY_MICROS, 3);
     final LongAdder success = new LongAdder();
     final LongAdder errors = new LongAdder();
+    final AtomicInteger inFlight = new AtomicInteger();
     volatile long elapsedNanos;
   }
 
