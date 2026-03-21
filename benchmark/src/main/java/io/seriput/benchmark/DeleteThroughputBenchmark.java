@@ -3,14 +3,13 @@ package io.seriput.benchmark;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.seriput.client.SeriputClient;
 
 final class DeleteThroughputBenchmark extends ThroughputBenchmark {
-  private static final int BATCH_SIZE = 1_000;
+  private static final int MAX_IN_FLIGHT = 10_000;
   private static final Logger logger = LogManager.getLogger(DeleteThroughputBenchmark.class);
 
   private final AtomicLong keyCounter = new AtomicLong();
@@ -29,19 +28,13 @@ final class DeleteThroughputBenchmark extends ThroughputBenchmark {
     long totalKeys = (long) ((config.warmupSec() + config.testSec()) * config.targetRps() * 1.1);
     logger.info("Pre-populating {} keys for DELETE benchmark...", totalKeys);
 
-    var futures = new ArrayList<CompletableFuture<Void>>(BATCH_SIZE);
+    var semaphore = new Semaphore(MAX_IN_FLIGHT);
     for (long i = 0; i < totalKeys; i++) {
-      String key = "del-" + i;
-      futures.add(client.put(key, "v"));
-
-      if (futures.size() >= BATCH_SIZE) {
-        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
-        futures.clear();
-      }
+      semaphore.acquireUninterruptibly();
+      client.put("del-" + i, "v")
+          .whenComplete((r, t) -> semaphore.release());
     }
-    if (!futures.isEmpty()) {
-      CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
-    }
+    semaphore.acquireUninterruptibly(MAX_IN_FLIGHT);
 
     logger.info("Pre-population complete ({} keys).", totalKeys);
   }
