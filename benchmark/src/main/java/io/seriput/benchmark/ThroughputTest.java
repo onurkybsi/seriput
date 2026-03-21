@@ -1,11 +1,10 @@
 package io.seriput.benchmark;
 
-import org.HdrHistogram.Histogram;
-import org.HdrHistogram.Recorder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import io.seriput.client.SeriputClient;
+import io.seriput.benchmark.Measurement.BenchmarkResult;
 import io.seriput.common.ObjectMapperProvider;
 import io.seriput.server.SeriputServer;
 
@@ -13,11 +12,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -44,7 +40,6 @@ final class ThroughputTest {
   private static final int TEST_SEC = 120;
   private static final int TARGET_RPS = 120_000;
   private static final long INTERVAL_NANOS = 1_000_000_000L / TARGET_RPS;
-  private static final long MAX_LATENCY_MICROS = TimeUnit.SECONDS.toMicros(10);
   private static final String BENCHMARK_KEY = "k";
   private static final String RESULTS_FILE = "benchmark-results.jsonl";
 
@@ -80,7 +75,8 @@ final class ThroughputTest {
       runPhase(client, TEST_SEC, m);
       logger.info("Measurement phase complete.");
 
-      BenchmarkResult result = BenchmarkResult.of(m);
+      BenchmarkResult result = BenchmarkResult.of(m,
+          new BenchmarkConfig(PORT, CONCURRENCY, WARMUP_SEC, TEST_SEC, TARGET_RPS));
       persistResult(result);
       logger.info("=== Baseline Throughput Test (Seriput) ===");
       logger.info("Connections:   {}", CONCURRENCY);
@@ -147,7 +143,7 @@ final class ThroughputTest {
             logger.warn("Request failed: {}", throwable.getMessage());
           } else {
             long micros = (System.nanoTime() - startNanos) / 1_000L;
-            measurementOrNull.recorder.recordValue(Math.min(micros, MAX_LATENCY_MICROS));
+            measurementOrNull.recorder.recordValue(Math.min(micros, Measurement.MAX_LATENCY_MICROS));
             measurementOrNull.success.increment();
           }
           measurementOrNull.inFlight.decrementAndGet();
@@ -171,43 +167,4 @@ final class ThroughputTest {
     }
   }
 
-  private static final class Measurement {
-    final Recorder recorder = new Recorder(MAX_LATENCY_MICROS, 3);
-    final LongAdder success = new LongAdder();
-    final LongAdder errors = new LongAdder();
-    final AtomicInteger inFlight = new AtomicInteger();
-    volatile long elapsedNanos;
-  }
-
-  private record BenchmarkResult(
-      String timestamp,
-      int concurrency,
-      int targetRps,
-      int durationSec,
-      double rpsSuccess,
-      double p95Ms,
-      double p99Ms,
-      double errorRatePct) {
-
-    static BenchmarkResult of(Measurement m) {
-      long ok = m.success.sum();
-      long err = m.errors.sum();
-      long total = ok + err;
-      double seconds = m.elapsedNanos / 1_000_000_000.0;
-      double rpsSuccess = seconds > 0 ? (ok / seconds) : 0.0;
-      double errorRatePct = total > 0 ? (err * 100.0 / total) : 0.0;
-      Histogram histogram = m.recorder.getIntervalHistogram();
-      double p95Ms = histogram.getValueAtPercentile(95.0) / 1_000.0;
-      double p99Ms = histogram.getValueAtPercentile(99.0) / 1_000.0;
-      return new BenchmarkResult(
-          Instant.now().toString(),
-          CONCURRENCY,
-          TARGET_RPS,
-          TEST_SEC,
-          rpsSuccess,
-          p95Ms,
-          p99Ms,
-          errorRatePct);
-    }
-  }
 }
