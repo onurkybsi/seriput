@@ -9,7 +9,7 @@ final class PutThroughputBenchmark extends ThroughputBenchmark {
   }
 
   @Override
-  String resultsFile() {
+  String resultFile() {
     throw new UnsupportedOperationException("Not yet implemented");
   }
 

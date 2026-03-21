@@ -25,7 +25,7 @@ abstract sealed class ThroughputBenchmark permits GetThroughputBenchmark, PutThr
     this.config = config;
   }
 
-  abstract String resultsFile();
+  abstract String resultFile();
 
   abstract void prepopulate(SeriputClient client);
 
@@ -109,10 +109,10 @@ abstract sealed class ThroughputBenchmark permits GetThroughputBenchmark, PutThr
   private void persistResult(BenchmarkResult result) {
     try {
       String json = ObjectMapperProvider.getInstance().writeValueAsString(result);
-      Files.writeString(Path.of(resultsFile()), json + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-      logger.info("Result persisted to {}", resultsFile()); // NOSONAR
+      Files.writeString(Path.of(resultFile()), json + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+      logger.info("Result persisted to {}", resultFile()); // NOSONAR
     } catch (IOException e) {
-      logger.error("Failed to persist benchmark result to {}", resultsFile(), e);
+      logger.error("Failed to persist benchmark result to {}", resultFile(), e);
     }
   }
 
