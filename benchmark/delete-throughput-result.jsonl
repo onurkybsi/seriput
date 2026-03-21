@@ -1,0 +1,1 @@
+{"timestamp":"2026-03-21T16:18:43.310149Z","concurrency":128,"targetRps":120000,"durationSec":120,"rpsSuccess":120003.01107885836,"p95Ms":5.259,"p99Ms":30.943,"errorRatePct":0.0}
