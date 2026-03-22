@@ -66,6 +66,7 @@ final class SeriputConnection implements AutoCloseable {
     var cause = new ConnectionClosedException("Connection closed!");
     PendingRequest req;
     while ((req = this.pendingRequests.poll()) != null) {
+      req.onPayloadConsumed().run();
       completeExceptionally(req.onCompleted(), cause);
     }
     PendingResponse resp;
@@ -99,7 +100,7 @@ final class SeriputConnection implements AutoCloseable {
           break;
         } else {
           PendingRequest completed = this.pendingRequests.remove();
-          completed.onRequestSent().run();
+          completed.onPayloadConsumed().run();
           this.pendingResponses.add(new PendingResponse(completed.onCompleted()));
         }
       }

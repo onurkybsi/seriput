@@ -7,7 +7,7 @@ import java.util.concurrent.CompletableFuture;
  * Represents a request to be sent over a {@code SeriputConnection}.
  *
  * @param payload request payload
- * @param onRequestSent callback to invoke after the payload has been fully written
+ * @param onPayloadConsumed callback to invoke once the payload buffer is no longer needed
  * @param onCompleted callback to invoke once the response payload has been received
  */
-record PendingRequest(ByteBuffer payload, Runnable onRequestSent, CompletableFuture<byte[]> onCompleted) {}
+record PendingRequest(ByteBuffer payload, Runnable onPayloadConsumed, CompletableFuture<byte[]> onCompleted) {}
