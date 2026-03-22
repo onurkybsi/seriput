@@ -42,7 +42,7 @@ final class SeriputClientImplTest {
     @Test
     void should_Return_Deserialized_Value_When_Response_Is_Success() {
       // given
-      when(connectionPool.enqueue(any(ByteBuffer.class)))
+      when(connectionPool.enqueue(any(ByteBuffer.class), any(Runnable.class)))
           .thenReturn(CompletableFuture.completedFuture(ResponseFixtures.okJson(Map.of("name", "John"))));
 
       // when
@@ -50,13 +50,13 @@ final class SeriputClientImplTest {
 
       // then
       assertThat(actual.get("name").asString()).isEqualTo("John");
-      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
 
     @Test
     void should_Throw_NotFoundException_When_Response_Is_NOT_FOUND() {
       // given
-      when(connectionPool.enqueue(any(ByteBuffer.class)))
+      when(connectionPool.enqueue(any(ByteBuffer.class), any(Runnable.class)))
           .thenReturn(CompletableFuture.completedFuture(ResponseFixtures.notFoundVoid()));
 
       // when
@@ -66,13 +66,13 @@ final class SeriputClientImplTest {
       thrown
           .isInstanceOf(CompletionException.class)
           .hasCause(new NotFoundException(null, null));
-      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
 
     @Test
     void should_Throw_InvalidRequestException_When_Response_Is_INVALID_REQUEST() {
       // given
-      when(connectionPool.enqueue(any(ByteBuffer.class)))
+      when(connectionPool.enqueue(any(ByteBuffer.class), any(Runnable.class)))
           .thenReturn(CompletableFuture.completedFuture(ResponseFixtures.invalidRequestVoid()));
 
       // when
@@ -82,13 +82,13 @@ final class SeriputClientImplTest {
       thrown
           .isInstanceOf(CompletionException.class)
           .hasCause(new InvalidRequestException(null, null));
-      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
 
     @Test
     void should_Throw_InternalErrorException_When_Response_Is_INTERNAL_ERROR() {
       // given
-      when(connectionPool.enqueue(any(ByteBuffer.class)))
+      when(connectionPool.enqueue(any(ByteBuffer.class), any(Runnable.class)))
           .thenReturn(CompletableFuture.completedFuture(ResponseFixtures.internalErrorVoid()));
 
       // when
@@ -98,7 +98,7 @@ final class SeriputClientImplTest {
       thrown
           .isInstanceOf(CompletionException.class)
           .hasCause(new InternalErrorException(null, null));
-      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
 
     @Test
@@ -113,7 +113,7 @@ final class SeriputClientImplTest {
       thrown
           .isInstanceOf(IllegalStateException.class)
           .hasMessage("SeriputClient is closed!");
-      verify(connectionPool, never()).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, never()).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
   }
 
@@ -122,7 +122,7 @@ final class SeriputClientImplTest {
     @Test
     void should_Return_Null_When_Response_Is_Success() {
       // given
-      when(connectionPool.enqueue(any(ByteBuffer.class)))
+      when(connectionPool.enqueue(any(ByteBuffer.class), any(Runnable.class)))
           .thenReturn(CompletableFuture.completedFuture(ResponseFixtures.okVoid()));
 
       // when
@@ -130,13 +130,13 @@ final class SeriputClientImplTest {
 
       // then
       assertThat(actual).isNull();
-      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
 
     @Test
     void should_Throw_InternalErrorException_When_Response_Is_INTERNAL_ERROR() {
       // given
-      when(connectionPool.enqueue(any(ByteBuffer.class)))
+      when(connectionPool.enqueue(any(ByteBuffer.class), any(Runnable.class)))
           .thenReturn(CompletableFuture.completedFuture(ResponseFixtures.internalErrorVoid()));
 
       // when
@@ -146,7 +146,7 @@ final class SeriputClientImplTest {
       thrown
           .isInstanceOf(CompletionException.class)
           .hasCause(new InternalErrorException(null, null));
-      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
 
     @Test
@@ -161,7 +161,7 @@ final class SeriputClientImplTest {
       thrown
           .isInstanceOf(IllegalStateException.class)
           .hasMessage("SeriputClient is closed!");
-      verify(connectionPool, never()).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, never()).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
   }
 
@@ -170,7 +170,7 @@ final class SeriputClientImplTest {
     @Test
     void should_Return_Null_When_Response_Is_Success() {
       // given
-      when(connectionPool.enqueue(any(ByteBuffer.class)))
+      when(connectionPool.enqueue(any(ByteBuffer.class), any(Runnable.class)))
           .thenReturn(CompletableFuture.completedFuture(ResponseFixtures.okVoid()));
 
       // when
@@ -178,13 +178,13 @@ final class SeriputClientImplTest {
 
       // then
       assertThat(actual).isNull();
-      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
 
     @Test
     void should_Throw_InvalidRequestException_When_Response_Is_INVALID_REQUEST() {
       // given
-      when(connectionPool.enqueue(any(ByteBuffer.class)))
+      when(connectionPool.enqueue(any(ByteBuffer.class), any(Runnable.class)))
           .thenReturn(CompletableFuture.completedFuture(ResponseFixtures.invalidRequestVoid()));
 
       // when & then
@@ -194,7 +194,7 @@ final class SeriputClientImplTest {
       thrown
           .isInstanceOf(CompletionException.class)
           .hasCause(new InvalidRequestException(null, null));
-      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
 
     @Test
@@ -209,7 +209,7 @@ final class SeriputClientImplTest {
       thrown
           .isInstanceOf(IllegalStateException.class)
           .hasMessage("SeriputClient is closed!");
-      verify(connectionPool, never()).enqueue(any(ByteBuffer.class));
+      verify(connectionPool, never()).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
   }
 
