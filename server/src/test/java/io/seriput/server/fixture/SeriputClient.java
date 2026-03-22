@@ -1,5 +1,6 @@
 package io.seriput.server.fixture;
 
+import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.common.serialization.request.KeyType;
 import io.seriput.common.serialization.request.RequestSerializer;
 import io.seriput.common.serialization.request.ValueType;
@@ -14,7 +15,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 
 public final class SeriputClient implements Closeable {
-  private static final RequestSerializer<String, Object> serializer = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8);
+  private static final RequestSerializer<String, Object> serializer = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8, new HeapByteBufferAllocator());
   private static final ResponseDeserializer deserializer = ResponseDeserializer.build();
 
   private final String host;

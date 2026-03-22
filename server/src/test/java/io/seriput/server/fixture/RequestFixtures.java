@@ -1,5 +1,6 @@
 package io.seriput.server.fixture;
 
+import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.common.serialization.request.KeyType;
 import io.seriput.common.serialization.request.RequestSerializer;
 import io.seriput.common.serialization.request.ValueType;
@@ -7,7 +8,7 @@ import io.seriput.common.serialization.request.ValueType;
 import java.util.UUID;
 
 public final class RequestFixtures {
-  private static final RequestSerializer<String, Object> requestSerializer = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8);
+  private static final RequestSerializer<String, Object> requestSerializer = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8, new HeapByteBufferAllocator());
   public static final String TEST_KEY = "user:";
   public static final Object testValue = new Object() {
     public final String name = "John Doe";

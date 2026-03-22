@@ -1,6 +1,7 @@
 package io.seriput.client;
 
 import io.seriput.client.exception.SeriputClientException;
+import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.common.serialization.request.KeyType;
 import io.seriput.common.serialization.request.RequestSerializer;
 import io.seriput.common.serialization.request.ValueType;
@@ -26,7 +27,7 @@ final class SeriputClientImpl implements SeriputClient {
   private final SeriputConnectionPool connectionPool;
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
   private final RequestSerializer<String, Object> requestSerializer = RequestSerializer.build(KeyType.UTF8,
-      ValueType.JSON_UTF8);
+      ValueType.JSON_UTF8, new HeapByteBufferAllocator());
   private final ResponseDeserializer responseSerializer = ResponseDeserializer.build();
 
   // Visible for testing

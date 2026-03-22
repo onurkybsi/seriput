@@ -1,5 +1,6 @@
 package io.seriput.server;
 
+import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.common.serialization.request.KeyType;
 import io.seriput.common.serialization.request.RequestSerializer;
 import io.seriput.common.serialization.request.ValueType;
@@ -27,7 +28,7 @@ import static org.mockito.Mockito.*;
 
 final class SeriputServerTest {
   private static final int SERVER_PORT = 8080;
-  private static final RequestSerializer<String, ObjectNode> serializer = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8);
+  private static final RequestSerializer<String, ObjectNode> serializer = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8, new HeapByteBufferAllocator());
 
   private RequestHandler requestHandler;
 

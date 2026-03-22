@@ -1,5 +1,7 @@
 package io.seriput.common.serialization.request;
 
+import io.seriput.common.ByteBufferAllocator;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -13,28 +15,31 @@ public final class RequestSerializer<K, V> {
 
   private final KeySerializer<K> keySerializer;
   private final ValueSerializer<V> valueSerializer;
+  private final ByteBufferAllocator allocator;
 
-  private RequestSerializer(KeySerializer<K> keySerializer, ValueSerializer<V> valueSerializer) {
+  private RequestSerializer(KeySerializer<K> keySerializer, ValueSerializer<V> valueSerializer, ByteBufferAllocator allocator) {
     this.keySerializer = keySerializer;
     this.valueSerializer = valueSerializer;
+    this.allocator = allocator;
   }
 
   /**
-   * Builds a {@code RequestSerializer} by given {@code keyType} and {@code valueType}.
+   * Builds a {@code RequestSerializer} by given {@code keyType}, {@code valueType}, and {@code allocator}.
    *
    * @param keyType key type to serialize
    * @param valueType value type to serialize
+   * @param allocator allocator for {@link ByteBuffer} instances
    * @return built {@code RequestSerializer} instance
    */
   @SuppressWarnings("unchecked")
-  public static <K, V> RequestSerializer<K, V> build(KeyType keyType, ValueType valueType) {
+  public static <K, V> RequestSerializer<K, V> build(KeyType keyType, ValueType valueType, ByteBufferAllocator allocator) {
     KeySerializer<K> keySerializer = (KeySerializer<K>) switch (keyType) {
       case UTF8 -> new Utf8StringKeySerializer();
     };
     ValueSerializer<V> valueSerializer = switch (valueType) {
       case JSON_UTF8 -> new JsonUtf8ValueSerializer<>();
     };
-    return new RequestSerializer<>(keySerializer, valueSerializer);
+    return new RequestSerializer<>(keySerializer, valueSerializer, allocator);
   }
 
   /**
@@ -45,7 +50,7 @@ public final class RequestSerializer<K, V> {
    */
   public ByteBuffer serializeGet(K key) {
     byte[] serializedKey = keySerializer.serialize(key);
-    ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE + serializedKey.length);
+    ByteBuffer buffer = allocator.allocate(HEADER_SIZE + serializedKey.length);
     buffer.put(RequestOp.GET.op());
     buffer.put(keySerializer.typeId());
     buffer.put(valueSerializer.typeId());
@@ -53,7 +58,7 @@ public final class RequestSerializer<K, V> {
     buffer.putInt(0); // No value for GET
     buffer.put(serializedKey);
     buffer.flip(); // Switch to read mode
-    return buffer.asReadOnlyBuffer();
+    return buffer;
   }
 
   /**
@@ -66,7 +71,7 @@ public final class RequestSerializer<K, V> {
   public ByteBuffer serializePut(K key, V value) {
     byte[] serializedKey = keySerializer.serialize(key);
     byte[] serializedValue = valueSerializer.serialize(value);
-    ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE + serializedKey.length + serializedValue.length);
+    ByteBuffer buffer = allocator.allocate(HEADER_SIZE + serializedKey.length + serializedValue.length);
     buffer.put(RequestOp.PUT.op());
     buffer.put(keySerializer.typeId());
     buffer.put(valueSerializer.typeId());
@@ -75,7 +80,7 @@ public final class RequestSerializer<K, V> {
     buffer.put(serializedKey);
     buffer.put(serializedValue);
     buffer.flip(); // Switch to read mode
-    return buffer.asReadOnlyBuffer();
+    return buffer;
   }
 
   /**
@@ -87,7 +92,7 @@ public final class RequestSerializer<K, V> {
   public ByteBuffer serializeDelete(K key) {
     byte[] serializedKey = keySerializer.serialize(key);
 
-    ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE + serializedKey.length);
+    ByteBuffer buffer = allocator.allocate(HEADER_SIZE + serializedKey.length);
     buffer.put(RequestOp.DELETE.op());
     buffer.put(keySerializer.typeId());
     buffer.put(valueSerializer.typeId());
@@ -95,6 +100,6 @@ public final class RequestSerializer<K, V> {
     buffer.putInt(0); // No value for DELETE
     buffer.put(serializedKey);
     buffer.flip(); // Switch to read mode
-    return buffer.asReadOnlyBuffer();
+    return buffer;
   }
 }

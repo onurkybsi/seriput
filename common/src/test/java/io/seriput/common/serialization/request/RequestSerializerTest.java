@@ -1,6 +1,7 @@
 package io.seriput.common.serialization.request;
 
 import com.google.common.primitives.Bytes;
+import io.seriput.common.HeapByteBufferAllocator;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 final class RequestSerializerTest {
-  private static final RequestSerializer<String, Object> underTest = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8);
+  private static final RequestSerializer<String, Object> underTest = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8, new HeapByteBufferAllocator());
 
   @Nested
   class SerializeGet {
