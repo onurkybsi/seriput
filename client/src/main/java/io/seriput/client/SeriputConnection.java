@@ -66,11 +66,11 @@ final class SeriputConnection implements AutoCloseable {
     var cause = new ConnectionClosedException("Connection closed!");
     PendingRequest req;
     while ((req = this.pendingRequests.poll()) != null) {
-      completeExceptionally(req.callback(), cause);
+      completeExceptionally(req.onCompleted(), cause);
     }
     PendingResponse resp;
     while ((resp = this.pendingResponses.poll()) != null) {
-      completeExceptionally(resp.callback(), cause);
+      completeExceptionally(resp.onCompleted(), cause);
     }
   }
 
@@ -98,7 +98,9 @@ final class SeriputConnection implements AutoCloseable {
         if (request.payload().hasRemaining()) {
           break;
         } else {
-          this.pendingResponses.add(new PendingResponse(this.pendingRequests.remove().callback()));
+          PendingRequest completed = this.pendingRequests.remove();
+          completed.onRequestSent().run();
+          this.pendingResponses.add(new PendingResponse(completed.onCompleted()));
         }
       }
     } catch (IOException e) {
@@ -170,7 +172,7 @@ final class SeriputConnection implements AutoCloseable {
       }
 
       try {
-        this.callbackExecutor.execute(() -> nextToComplete.callback().complete(nextToComplete.payload()));
+        this.callbackExecutor.execute(() -> nextToComplete.onCompleted().complete(nextToComplete.payload()));
         this.pendingResponses.remove();
       } catch (RejectedExecutionException e) {
         logger.warn("Callback executor rejected completion; will retry later.", e);

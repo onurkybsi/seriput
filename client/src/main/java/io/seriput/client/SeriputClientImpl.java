@@ -65,7 +65,7 @@ final class SeriputClientImpl implements SeriputClient {
       throw new IllegalStateException("SeriputClient is closed!");
     }
     return connectionPool
-        .enqueue(requestSerializer.serializeGet(key))
+        .enqueue(requestSerializer.serializeGet(key), () -> {})
         .thenApply(buffer -> {
           var response = responseSerializer.deserialize(ByteBuffer.wrap(buffer), valueType);
           if (response instanceof SuccessResponse<?> success) {
@@ -84,7 +84,7 @@ final class SeriputClientImpl implements SeriputClient {
       throw new IllegalStateException("SeriputClient is closed!");
     }
     return connectionPool
-        .enqueue(requestSerializer.serializePut(key, value))
+        .enqueue(requestSerializer.serializePut(key, value), () -> {})
         .thenApply(buffer -> {
           var response = responseSerializer.deserialize(ByteBuffer.wrap(buffer), null);
           if (response instanceof SuccessResponse<?>) {
@@ -103,7 +103,7 @@ final class SeriputClientImpl implements SeriputClient {
       throw new IllegalStateException("SeriputClient is closed!");
     }
     return connectionPool
-        .enqueue(requestSerializer.serializeDelete(key))
+        .enqueue(requestSerializer.serializeDelete(key), () -> {})
         .thenApply(buffer -> {
           var response = responseSerializer.deserialize(ByteBuffer.wrap(buffer), null);
           if (response instanceof SuccessResponse<?>) {

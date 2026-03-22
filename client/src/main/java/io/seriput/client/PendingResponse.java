@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 @Accessors(fluent = true)
 final class PendingResponse {
   @Getter
-  private final CompletableFuture<byte[]> callback;
+  private final CompletableFuture<byte[]> onCompleted;
 
   @Getter
   @Setter

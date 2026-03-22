@@ -61,13 +61,13 @@ final class SeriputConnectionPool implements AutoCloseable {
   }
 
   // Enqueue a request and return a future that will be completed with the response.
-  CompletableFuture<byte[]> enqueue(ByteBuffer request) {
+  CompletableFuture<byte[]> enqueue(ByteBuffer request, Runnable onRequestSent) {
     CompletableFuture<byte[]> future = new CompletableFuture<>();
     if (!this.isRunning.get()) {
       future.completeExceptionally(new IllegalStateException("Connection pool is not running!"));
       return future;
     }
-    this.outboundQueue.offer(new PendingRequest(request, future));
+    this.outboundQueue.offer(new PendingRequest(request, onRequestSent, future));
     this.selector.wakeup();
     return future;
   }
@@ -164,13 +164,13 @@ final class SeriputConnectionPool implements AutoCloseable {
       try {
         this.callbackExecutor.execute(() ->
           request
-            .callback()
+            .onCompleted()
             .completeExceptionally(new IllegalStateException("Connection pool is shutting down!"))
         );
       } catch (RejectedExecutionException e) {
         logger.warn("Callback executor rejected the pending request, completing on the event loop's thread!", e);
         request
-          .callback()
+          .onCompleted()
           .completeExceptionally(new IllegalStateException("Connection pool is shutting down!"));
       } finally {
         numOfPendingRequestCleared++;
