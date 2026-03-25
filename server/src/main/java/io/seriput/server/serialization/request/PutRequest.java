@@ -9,4 +9,4 @@ import io.seriput.server.core.Value;
  * @param key key to put
  * @param value value to put
  */
-public record PutRequest(Key key, Value value) implements Request { }
+public record PutRequest(Key key, Value value) implements Request {}

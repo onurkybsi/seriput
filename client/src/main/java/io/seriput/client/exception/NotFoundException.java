@@ -1,18 +1,13 @@
 package io.seriput.client.exception;
 
+import java.util.Objects;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import java.util.Objects;
-
-/**
- * Exception thrown when a requested key is not found in the Seriput key-value
- * store.
- */
+/** Exception thrown when a requested key is not found in the Seriput key-value store. */
 @Accessors(fluent = true)
 public final class NotFoundException extends SeriputClientException {
-  @Getter
-  private final Integer errorCode;
+  @Getter private final Integer errorCode;
 
   public NotFoundException(String message, Integer errorCode) {
     super(message);
@@ -31,10 +26,8 @@ public final class NotFoundException extends SeriputClientException {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (!(o instanceof NotFoundException that))
-      return false;
+    if (this == o) return true;
+    if (!(o instanceof NotFoundException that)) return false;
     return Objects.equals(errorCode, that.errorCode)
         && Objects.equals(getMessage(), that.getMessage())
         && Objects.equals(getCause(), that.getCause());
@@ -47,7 +40,13 @@ public final class NotFoundException extends SeriputClientException {
 
   @Override
   public String toString() {
-    return "NotFoundException(" + "message=" + getMessage() + ", cause=" + getCause() +
-        ", errorCode=" + errorCode + ')';
+    return "NotFoundException("
+        + "message="
+        + getMessage()
+        + ", cause="
+        + getCause()
+        + ", errorCode="
+        + errorCode
+        + ')';
   }
 }

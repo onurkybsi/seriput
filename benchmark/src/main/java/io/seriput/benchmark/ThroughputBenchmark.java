@@ -1,13 +1,9 @@
 package io.seriput.benchmark;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import io.seriput.client.SeriputClient;
 import io.seriput.benchmark.Measurement.BenchmarkResult;
+import io.seriput.client.SeriputClient;
 import io.seriput.common.ObjectMapperProvider;
 import io.seriput.server.SeriputServer;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,8 +11,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-abstract sealed class ThroughputBenchmark permits GetThroughputBenchmark, PutThroughputBenchmark, DeleteThroughputBenchmark {
+abstract sealed class ThroughputBenchmark
+    permits GetThroughputBenchmark, PutThroughputBenchmark, DeleteThroughputBenchmark {
   private static final Logger logger = LogManager.getLogger(ThroughputBenchmark.class);
 
   protected final BenchmarkConfig config;
@@ -65,18 +64,21 @@ abstract sealed class ThroughputBenchmark permits GetThroughputBenchmark, PutThr
       throws InterruptedException {
     long intervalNanos = config.intervalNanos();
     var shouldStop = new AtomicBoolean(false);
-    var loadGeneratorThread = new Thread(() -> {
-      long nextFireNanos = System.nanoTime();
-      while (!shouldStop.get()) {
-        LockSupport.parkNanos(nextFireNanos - System.nanoTime());
-        if (shouldStop.get()) {
-          break;
-        }
+    var loadGeneratorThread =
+        new Thread(
+            () -> {
+              long nextFireNanos = System.nanoTime();
+              while (!shouldStop.get()) {
+                LockSupport.parkNanos(nextFireNanos - System.nanoTime());
+                if (shouldStop.get()) {
+                  break;
+                }
 
-        fireRequest(client, measurementOrNull);
-        nextFireNanos += intervalNanos;
-      }
-    }, "load-generator");
+                fireRequest(client, measurementOrNull);
+                nextFireNanos += intervalNanos;
+              }
+            },
+            "load-generator");
     loadGeneratorThread.start();
     long startNanos = System.nanoTime();
 
@@ -85,12 +87,15 @@ abstract sealed class ThroughputBenchmark permits GetThroughputBenchmark, PutThr
     loadGeneratorThread.join();
 
     if (measurementOrNull != null) {
-      logger.info("Waiting for the remaining {} inflight requests...", measurementOrNull.inFlight.get());
+      logger.info(
+          "Waiting for the remaining {} inflight requests...", measurementOrNull.inFlight.get());
       long drainTimeoutNanos = TimeUnit.SECONDS.toNanos(10);
       long drainStart = System.nanoTime();
       while (measurementOrNull.inFlight.get() > 0) {
         if (System.nanoTime() - drainStart > drainTimeoutNanos) {
-          logger.warn("Drain timed out with {} in-flight requests remaining", measurementOrNull.inFlight.get());
+          logger.warn(
+              "Drain timed out with {} in-flight requests remaining",
+              measurementOrNull.inFlight.get());
           break;
         }
         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
@@ -100,16 +105,18 @@ abstract sealed class ThroughputBenchmark permits GetThroughputBenchmark, PutThr
   }
 
   private SeriputClient buildClient() throws IOException {
-    logger.info("Building SeriputClient with pool size {} on localhost:{}...", config.concurrency(), config.port());
-    return SeriputClient.builder("localhost", config.port())
-        .poolSize(config.concurrency())
-        .build();
+    logger.info(
+        "Building SeriputClient with pool size {} on localhost:{}...",
+        config.concurrency(),
+        config.port());
+    return SeriputClient.builder("localhost", config.port()).poolSize(config.concurrency()).build();
   }
 
   private void persistResult(BenchmarkResult result) {
     try {
       String json = ObjectMapperProvider.getInstance().writeValueAsString(result);
-      Files.writeString(Path.of(resultFile()), json + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+      Files.writeString(
+          Path.of(resultFile()), json + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
       logger.info("Result persisted to {}", resultFile()); // NOSONAR
     } catch (IOException e) {
       logger.error("Failed to persist benchmark result to {}", resultFile(), e);

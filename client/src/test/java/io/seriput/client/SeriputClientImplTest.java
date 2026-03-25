@@ -1,22 +1,5 @@
 package io.seriput.client;
 
-import io.seriput.client.exception.InternalErrorException;
-import io.seriput.client.exception.InvalidRequestException;
-import io.seriput.client.exception.NotFoundException;
-import io.seriput.client.fixture.ResponseFixtures;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import tools.jackson.databind.node.ObjectNode;
-
-import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,10 +8,25 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.seriput.client.exception.InternalErrorException;
+import io.seriput.client.exception.InvalidRequestException;
+import io.seriput.client.exception.NotFoundException;
+import io.seriput.client.fixture.ResponseFixtures;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.node.ObjectNode;
+
 @ExtendWith(MockitoExtension.class)
 final class SeriputClientImplTest {
-  @Mock
-  SeriputConnectionPool connectionPool;
+  @Mock SeriputConnectionPool connectionPool;
 
   private SeriputClientImpl underTest;
 
@@ -43,7 +41,8 @@ final class SeriputClientImplTest {
     void should_Return_Deserialized_Value_When_Response_Is_Success() {
       // given
       when(connectionPool.enqueue(any(ByteBuffer.class), any(Runnable.class)))
-          .thenReturn(CompletableFuture.completedFuture(ResponseFixtures.okJson(Map.of("name", "John"))));
+          .thenReturn(
+              CompletableFuture.completedFuture(ResponseFixtures.okJson(Map.of("name", "John"))));
 
       // when
       var actual = underTest.get("test-key", ObjectNode.class).join();
@@ -63,9 +62,7 @@ final class SeriputClientImplTest {
       var thrown = assertThatThrownBy(() -> underTest.get("missing-key", String.class).join());
 
       // then
-      thrown
-          .isInstanceOf(CompletionException.class)
-          .hasCause(new NotFoundException(null, null));
+      thrown.isInstanceOf(CompletionException.class).hasCause(new NotFoundException(null, null));
       verify(connectionPool, times(1)).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
 
@@ -110,9 +107,7 @@ final class SeriputClientImplTest {
       var thrown = assertThatThrownBy(() -> underTest.get("key", String.class));
 
       // then
-      thrown
-          .isInstanceOf(IllegalStateException.class)
-          .hasMessage("SeriputClient is closed!");
+      thrown.isInstanceOf(IllegalStateException.class).hasMessage("SeriputClient is closed!");
       verify(connectionPool, never()).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
   }
@@ -158,9 +153,7 @@ final class SeriputClientImplTest {
       var thrown = assertThatThrownBy(() -> underTest.put("key", "value"));
 
       // then
-      thrown
-          .isInstanceOf(IllegalStateException.class)
-          .hasMessage("SeriputClient is closed!");
+      thrown.isInstanceOf(IllegalStateException.class).hasMessage("SeriputClient is closed!");
       verify(connectionPool, never()).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
   }
@@ -206,9 +199,7 @@ final class SeriputClientImplTest {
       var thrown = assertThatThrownBy(() -> underTest.delete("key"));
 
       // then
-      thrown
-          .isInstanceOf(IllegalStateException.class)
-          .hasMessage("SeriputClient is closed!");
+      thrown.isInstanceOf(IllegalStateException.class).hasMessage("SeriputClient is closed!");
       verify(connectionPool, never()).enqueue(any(ByteBuffer.class), any(Runnable.class));
     }
   }

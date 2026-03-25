@@ -7,4 +7,4 @@ import io.seriput.server.core.Key;
  *
  * @param key key to delete
  */
-public record DeleteRequest(Key key) implements Request { }
+public record DeleteRequest(Key key) implements Request {}

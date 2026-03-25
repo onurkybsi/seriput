@@ -1,16 +1,16 @@
 package io.seriput.common.serialization.request;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 import com.google.common.primitives.Bytes;
 import io.seriput.common.HeapByteBufferAllocator;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
 final class RequestSerializerTest {
-  private static final RequestSerializer<String, Object> underTest = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8, new HeapByteBufferAllocator());
+  private static final RequestSerializer<String, Object> underTest =
+      RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8, new HeapByteBufferAllocator());
 
   @Nested
   class SerializeGet {
@@ -25,16 +25,22 @@ final class RequestSerializerTest {
       // then
       byte[] actualBytes = new byte[actual.remaining()];
       actual.get(actualBytes);
-      byte[] expected = Bytes.concat(
-        new byte[] { // headers
-          RequestOp.GET.op(),
-          KeyType.UTF8.typeId(),
-          ValueType.JSON_UTF8.typeId(),
-          0, 0, 0, 9, // keyLength = 9
-          0, 0, 0, 0,  // valueLength = 0
-        },
-        key.getBytes()
-      );
+      byte[] expected =
+          Bytes.concat(
+              new byte[] { // headers
+                RequestOp.GET.op(),
+                KeyType.UTF8.typeId(),
+                ValueType.JSON_UTF8.typeId(),
+                0,
+                0,
+                0,
+                9, // keyLength = 9
+                0,
+                0,
+                0,
+                0, // valueLength = 0
+              },
+              key.getBytes());
       assertThat(actualBytes).isEqualTo(expected);
     }
   }
@@ -45,10 +51,11 @@ final class RequestSerializerTest {
     void should_Serialize_Put_Request() {
       // given
       String key = "user:1234";
-      Object value = new Object() {
-        public final String firstName = "John";
-        public final String lastName = "Doe";
-      };
+      Object value =
+          new Object() {
+            public final String firstName = "John";
+            public final String lastName = "Doe";
+          };
 
       // when
       var actual = underTest.serializePut(key, value);
@@ -56,17 +63,23 @@ final class RequestSerializerTest {
       // then
       byte[] actualBytes = new byte[actual.remaining()];
       actual.get(actualBytes);
-      byte[] expected = Bytes.concat(
-        new byte[] { // headers
-          RequestOp.PUT.op(),
-          KeyType.UTF8.typeId(),
-          ValueType.JSON_UTF8.typeId(),
-          0, 0, 0, 9, // keyLength = 9
-          0, 0, 0, 37,  // valueLength = 37
-        },
-        key.getBytes(),
-        "{\"firstName\":\"John\",\"lastName\":\"Doe\"}".getBytes(StandardCharsets.UTF_8)
-      );
+      byte[] expected =
+          Bytes.concat(
+              new byte[] { // headers
+                RequestOp.PUT.op(),
+                KeyType.UTF8.typeId(),
+                ValueType.JSON_UTF8.typeId(),
+                0,
+                0,
+                0,
+                9, // keyLength = 9
+                0,
+                0,
+                0,
+                37, // valueLength = 37
+              },
+              key.getBytes(),
+              "{\"firstName\":\"John\",\"lastName\":\"Doe\"}".getBytes(StandardCharsets.UTF_8));
       assertThat(actualBytes).isEqualTo(expected);
     }
   }
@@ -84,16 +97,22 @@ final class RequestSerializerTest {
       // then
       byte[] actualBytes = new byte[actual.remaining()];
       actual.get(actualBytes);
-      byte[] expected = Bytes.concat(
-        new byte[] { // headers
-          RequestOp.DELETE.op(),
-          KeyType.UTF8.typeId(),
-          ValueType.JSON_UTF8.typeId(),
-          0, 0, 0, 9, // keyLength = 9
-          0, 0, 0, 0,  // valueLength = 0
-        },
-        key.getBytes()
-      );
+      byte[] expected =
+          Bytes.concat(
+              new byte[] { // headers
+                RequestOp.DELETE.op(),
+                KeyType.UTF8.typeId(),
+                ValueType.JSON_UTF8.typeId(),
+                0,
+                0,
+                0,
+                9, // keyLength = 9
+                0,
+                0,
+                0,
+                0, // valueLength = 0
+              },
+              key.getBytes());
       assertThat(actualBytes).isEqualTo(expected);
     }
   }

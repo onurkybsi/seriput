@@ -1,8 +1,6 @@
 package io.seriput.common.serialization.request;
 
-/**
- * Serializer for values.
- */
+/** Serializer for values. */
 sealed interface ValueSerializer<T> permits JsonUtf8ValueSerializer {
   /**
    * Serializes the given value.

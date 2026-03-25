@@ -3,7 +3,6 @@ package io.seriput.client.fixture;
 import io.seriput.common.ObjectMapperProvider;
 import io.seriput.common.serialization.response.ResponseStatus;
 import io.seriput.common.serialization.response.ResponseValueType;
-
 import java.nio.ByteBuffer;
 
 public final class ResponseFixtures {
@@ -35,7 +34,8 @@ public final class ResponseFixtures {
     return frame(ResponseStatus.INTERNAL_ERROR, ResponseValueType.VOID, new byte[0]);
   }
 
-  private static byte[] frame(ResponseStatus status, ResponseValueType valueType, byte[] valueBytes) {
+  private static byte[] frame(
+      ResponseStatus status, ResponseValueType valueType, byte[] valueBytes) {
     ByteBuffer buffer = ByteBuffer.allocate(1 + 1 + 4 + valueBytes.length);
     buffer.put(status.status());
     buffer.put(valueType.typeId());

@@ -5,9 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.Pipe;
 
-/**
- * A {@link ByteChannel} implementation for testing purposes.
- */
+/** A {@link ByteChannel} implementation for testing purposes. */
 public final class PipeByteChannel implements ByteChannel, AutoCloseable {
   private final Pipe.SinkChannel sink;
   private final Pipe.SourceChannel source;

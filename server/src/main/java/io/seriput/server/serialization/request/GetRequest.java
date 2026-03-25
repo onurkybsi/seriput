@@ -7,4 +7,4 @@ import io.seriput.server.core.Key;
  *
  * @param key key that its value to return
  */
-public record GetRequest(Key key) implements Request { }
+public record GetRequest(Key key) implements Request {}

@@ -1,17 +1,13 @@
 package io.seriput.client.exception;
 
+import java.util.Objects;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import java.util.Objects;
-
-/**
- * Exception thrown when a request to the Seriput key-value store is invalid.
- */
+/** Exception thrown when a request to the Seriput key-value store is invalid. */
 @Accessors(fluent = true)
 public final class InvalidRequestException extends SeriputClientException {
-  @Getter
-  private final Integer errorCode;
+  @Getter private final Integer errorCode;
 
   public InvalidRequestException(String message, Integer errorCode) {
     super(message);
@@ -30,10 +26,8 @@ public final class InvalidRequestException extends SeriputClientException {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (!(o instanceof InvalidRequestException that))
-      return false;
+    if (this == o) return true;
+    if (!(o instanceof InvalidRequestException that)) return false;
     return Objects.equals(errorCode, that.errorCode)
         && Objects.equals(getMessage(), that.getMessage())
         && Objects.equals(getCause(), that.getCause());
@@ -46,7 +40,13 @@ public final class InvalidRequestException extends SeriputClientException {
 
   @Override
   public String toString() {
-    return "InvalidRequestException(" + "message=" + getMessage() + ", cause=" + getCause() +
-        ", errorCode=" + errorCode + ')';
+    return "InvalidRequestException("
+        + "message="
+        + getMessage()
+        + ", cause="
+        + getCause()
+        + ", errorCode="
+        + errorCode
+        + ')';
   }
 }

@@ -6,7 +6,8 @@ import java.nio.channels.ByteChannel;
 import java.nio.channels.Pipe;
 
 /**
- * A {@link ByteChannel} implementation for testing one particular case which the OS send buffer is full.
+ * A {@link ByteChannel} implementation for testing one particular case which the OS send buffer is
+ * full.
  */
 public final class PartialWritePipeByteChannel implements ByteChannel, AutoCloseable {
   private final int maxBytesPerWrite;

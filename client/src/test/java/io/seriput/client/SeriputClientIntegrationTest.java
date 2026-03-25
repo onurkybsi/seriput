@@ -1,6 +1,15 @@
 package io.seriput.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import io.seriput.client.exception.NotFoundException;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,37 +20,29 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import tools.jackson.databind.node.ObjectNode;
 
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.stream.IntStream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 @Testcontainers
 final class SeriputClientIntegrationTest {
   private static final int SERIPUT_PORT = 9090;
 
   @Container
   @SuppressWarnings("resource")
-  static GenericContainer<?> server = new GenericContainer<>(
-      new ImageFromDockerfile("seriput-client-impl-test", false)
-          .withFileFromPath(".", Paths.get(".."))
-          .withBuildArg("SERIPUT_PORT", "9090")
-          .withDockerfilePath("server/Dockerfile"))
-      .withExposedPorts(SERIPUT_PORT)
-      .waitingFor(Wait.forListeningPort());
+  static GenericContainer<?> server =
+      new GenericContainer<>(
+              new ImageFromDockerfile("seriput-client-impl-test", false)
+                  .withFileFromPath(".", Paths.get(".."))
+                  .withBuildArg("SERIPUT_PORT", "9090")
+                  .withDockerfilePath("server/Dockerfile"))
+          .withExposedPorts(SERIPUT_PORT)
+          .waitingFor(Wait.forListeningPort());
 
   private SeriputClient client;
 
   @BeforeEach
   void setUp() throws Exception {
-    client = SeriputClient.builder(server.getHost(), server.getMappedPort(SERIPUT_PORT))
-        .poolSize(2)
-        .build();
+    client =
+        SeriputClient.builder(server.getHost(), server.getMappedPort(SERIPUT_PORT))
+            .poolSize(2)
+            .build();
   }
 
   @AfterEach
@@ -70,9 +71,7 @@ final class SeriputClientIntegrationTest {
 
     // then
     var expected = new NotFoundException(null, null);
-    thrown
-        .isInstanceOf(CompletionException.class)
-        .hasCause(expected);
+    thrown.isInstanceOf(CompletionException.class).hasCause(expected);
   }
 
   @Test
@@ -106,9 +105,8 @@ final class SeriputClientIntegrationTest {
   @Test
   void should_Handle_Concurrent_Operations_When_Multiple_Requests_Sent_In_Parallel() {
     // given
-    List<CompletableFuture<Void>> futures = IntStream.range(0, 50)
-        .mapToObj(i -> client.put("conc-key-" + i, Map.of("i", i)))
-        .toList();
+    List<CompletableFuture<Void>> futures =
+        IntStream.range(0, 50).mapToObj(i -> client.put("conc-key-" + i, Map.of("i", i))).toList();
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
     // when & then

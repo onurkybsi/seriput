@@ -1,9 +1,8 @@
 package io.seriput.benchmark;
 
+import io.seriput.client.SeriputClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import io.seriput.client.SeriputClient;
 
 final class GetThroughputBenchmark extends ThroughputBenchmark {
   private static final String KEY = "k";
@@ -30,21 +29,23 @@ final class GetThroughputBenchmark extends ThroughputBenchmark {
       measurement.inFlight.incrementAndGet();
     }
     long startNanos = System.nanoTime();
-    client.get(KEY, String.class)
-        .whenComplete((result, throwable) -> {
-          if (measurement == null) {
-            return;
-          }
-          if (throwable != null) {
-            measurement.errors.increment();
-            logger.warn("Request failed: {}", throwable.getMessage());
-          } else {
-            long micros = (System.nanoTime() - startNanos) / 1_000L;
-            measurement.recorder.recordValue(Math.min(micros, Measurement.MAX_LATENCY_MICROS));
-            measurement.success.increment();
-          }
-          measurement.inFlight.decrementAndGet();
-        });
+    client
+        .get(KEY, String.class)
+        .whenComplete(
+            (result, throwable) -> {
+              if (measurement == null) {
+                return;
+              }
+              if (throwable != null) {
+                measurement.errors.increment();
+                logger.warn("Request failed: {}", throwable.getMessage());
+              } else {
+                long micros = (System.nanoTime() - startNanos) / 1_000L;
+                measurement.recorder.recordValue(Math.min(micros, Measurement.MAX_LATENCY_MICROS));
+                measurement.success.increment();
+              }
+              measurement.inFlight.decrementAndGet();
+            });
   }
 
   public static void main(String[] args) throws Exception {

@@ -1,13 +1,13 @@
 package io.seriput.client.exception;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import io.seriput.common.serialization.response.ErrorResponse;
 import io.seriput.common.serialization.response.ErrorResponsePayload;
 import io.seriput.common.serialization.response.ResponseStatus;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 final class SeriputClientExceptionTest {
   @Nested

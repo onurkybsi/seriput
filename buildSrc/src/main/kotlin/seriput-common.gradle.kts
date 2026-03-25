@@ -1,6 +1,7 @@
 plugins {
     id("java-library")
     id("jacoco")
+    id("com.diffplug.spotless")
 }
 
 repositories { mavenCentral() }
@@ -8,6 +9,15 @@ repositories { mavenCentral() }
 java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
 
 jacoco { toolVersion = Versions.JACOCO }
+
+spotless {
+    java {
+        googleJavaFormat("1.35.0")
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
 
 dependencies {
     implementation(platform("org.apache.logging.log4j:log4j-bom:${Versions.LOG4J}"))
@@ -30,4 +40,8 @@ tasks.withType<JacocoReport>().configureEach {
         xml.required.set(true)
         html.required.set(true)
     }
+}
+
+tasks.named("check") {
+    dependsOn(tasks.named("spotlessCheck"))
 }

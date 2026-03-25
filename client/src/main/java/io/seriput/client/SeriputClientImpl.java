@@ -8,15 +8,13 @@ import io.seriput.common.serialization.request.ValueType;
 import io.seriput.common.serialization.response.ErrorResponse;
 import io.seriput.common.serialization.response.ResponseDeserializer;
 import io.seriput.common.serialization.response.SuccessResponse;
-
-import lombok.Builder;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.Builder;
 
 final class SeriputClientImpl implements SeriputClient {
   private static final int DEFAULT_POOL_SIZE = 10;
@@ -27,8 +25,8 @@ final class SeriputClientImpl implements SeriputClient {
   private final SeriputConnectionPool connectionPool;
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
   private final PooledByteBufferAllocator allocator = new PooledByteBufferAllocator();
-  private final RequestSerializer<String, Object> requestSerializer = RequestSerializer.build(KeyType.UTF8,
-      ValueType.JSON_UTF8, allocator);
+  private final RequestSerializer<String, Object> requestSerializer =
+      RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8, allocator);
   private final ResponseDeserializer responseSerializer = ResponseDeserializer.build();
 
   // Visible for testing
@@ -37,15 +35,24 @@ final class SeriputClientImpl implements SeriputClient {
   }
 
   @Builder
-  SeriputClientImpl(String host, int port, int poolSize, ExecutorService callbackExecutor,
-      int readBufferSize, int maxOutboundQueueSize) throws IOException {
-    this.connectionPool = new SeriputConnectionPool(
-        host,
-        port,
-        poolSize > 0 ? poolSize : DEFAULT_POOL_SIZE,
-        callbackExecutor != null ? callbackExecutor : Executors.newFixedThreadPool(DEFAULT_CALLBACK_EXECUTOR_POOL_SIZE),
-        readBufferSize > 0 ? readBufferSize : DEFAULT_READ_BUFFER_SIZE,
-        maxOutboundQueueSize > 0 ? maxOutboundQueueSize : DEFAULT_MAX_OUTBOUND_QUEUE_SIZE);
+  SeriputClientImpl(
+      String host,
+      int port,
+      int poolSize,
+      ExecutorService callbackExecutor,
+      int readBufferSize,
+      int maxOutboundQueueSize)
+      throws IOException {
+    this.connectionPool =
+        new SeriputConnectionPool(
+            host,
+            port,
+            poolSize > 0 ? poolSize : DEFAULT_POOL_SIZE,
+            callbackExecutor != null
+                ? callbackExecutor
+                : Executors.newFixedThreadPool(DEFAULT_CALLBACK_EXECUTOR_POOL_SIZE),
+            readBufferSize > 0 ? readBufferSize : DEFAULT_READ_BUFFER_SIZE,
+            maxOutboundQueueSize > 0 ? maxOutboundQueueSize : DEFAULT_MAX_OUTBOUND_QUEUE_SIZE);
     this.connectionPool.start();
   }
 
@@ -68,16 +75,17 @@ final class SeriputClientImpl implements SeriputClient {
     ByteBuffer payload = requestSerializer.serializeGet(key);
     return connectionPool
         .enqueue(payload, () -> allocator.release(payload))
-        .thenApply(buffer -> {
-          var response = responseSerializer.deserialize(ByteBuffer.wrap(buffer), valueType);
-          if (response instanceof SuccessResponse<?> success) {
-            return valueType.cast(success.value());
-          }
-          if (response instanceof ErrorResponse error) {
-            throw SeriputClientException.from(error);
-          }
-          throw new IllegalStateException("Unknown response type: " + response);
-        });
+        .thenApply(
+            buffer -> {
+              var response = responseSerializer.deserialize(ByteBuffer.wrap(buffer), valueType);
+              if (response instanceof SuccessResponse<?> success) {
+                return valueType.cast(success.value());
+              }
+              if (response instanceof ErrorResponse error) {
+                throw SeriputClientException.from(error);
+              }
+              throw new IllegalStateException("Unknown response type: " + response);
+            });
   }
 
   @Override
@@ -88,16 +96,17 @@ final class SeriputClientImpl implements SeriputClient {
     ByteBuffer payload = requestSerializer.serializePut(key, value);
     return connectionPool
         .enqueue(payload, () -> allocator.release(payload))
-        .thenApply(buffer -> {
-          var response = responseSerializer.deserialize(ByteBuffer.wrap(buffer), null);
-          if (response instanceof SuccessResponse<?>) {
-            return null;
-          }
-          if (response instanceof ErrorResponse error) {
-            throw SeriputClientException.from(error);
-          }
-          throw new IllegalStateException("Unknown response type: " + response);
-        });
+        .thenApply(
+            buffer -> {
+              var response = responseSerializer.deserialize(ByteBuffer.wrap(buffer), null);
+              if (response instanceof SuccessResponse<?>) {
+                return null;
+              }
+              if (response instanceof ErrorResponse error) {
+                throw SeriputClientException.from(error);
+              }
+              throw new IllegalStateException("Unknown response type: " + response);
+            });
   }
 
   @Override
@@ -108,15 +117,16 @@ final class SeriputClientImpl implements SeriputClient {
     ByteBuffer payload = requestSerializer.serializeDelete(key);
     return connectionPool
         .enqueue(payload, () -> allocator.release(payload))
-        .thenApply(buffer -> {
-          var response = responseSerializer.deserialize(ByteBuffer.wrap(buffer), null);
-          if (response instanceof SuccessResponse<?>) {
-            return null;
-          }
-          if (response instanceof ErrorResponse error) {
-            throw SeriputClientException.from(error);
-          }
-          throw new IllegalStateException("Unknown response type: " + response);
-        });
+        .thenApply(
+            buffer -> {
+              var response = responseSerializer.deserialize(ByteBuffer.wrap(buffer), null);
+              if (response instanceof SuccessResponse<?>) {
+                return null;
+              }
+              if (response instanceof ErrorResponse error) {
+                throw SeriputClientException.from(error);
+              }
+              throw new IllegalStateException("Unknown response type: " + response);
+            });
   }
 }

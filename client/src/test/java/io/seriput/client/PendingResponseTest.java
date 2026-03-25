@@ -1,11 +1,10 @@
 package io.seriput.client;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.concurrent.CompletableFuture;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 final class PendingResponseTest {
   @Nested
@@ -26,7 +25,7 @@ final class PendingResponseTest {
     void should_Return_True_When_Payload_Is_Set() {
       // given
       var pendingResponse = new PendingResponse(new CompletableFuture<>());
-      pendingResponse.payload(new byte[] { 1, 2, 3 });
+      pendingResponse.payload(new byte[] {1, 2, 3});
 
       // when
       var actual = pendingResponse.isReadyToBeCompleted();

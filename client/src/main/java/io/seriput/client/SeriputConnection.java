@@ -1,13 +1,9 @@
 package io.seriput.client;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import static io.seriput.common.serialization.response.ResponseDeserializer.bodySize;
+import static io.seriput.common.serialization.response.ResponseDeserializer.headerSize;
 
 import io.seriput.client.exception.ConnectionClosedException;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -19,36 +15,34 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-
-import static io.seriput.common.serialization.response.ResponseDeserializer.bodySize;
-import static io.seriput.common.serialization.response.ResponseDeserializer.headerSize;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Represents a single connection to the Seriput server.
- * <p>
- * This class is <b>not thread-safe</b> and is intended to be used by the event
- * loop thread.
+ *
+ * <p>This class is <b>not thread-safe</b> and is intended to be used by the event loop thread.
  */
 @Accessors(fluent = true)
 final class SeriputConnection implements AutoCloseable {
   private static final Logger logger = LogManager.getLogger(SeriputConnection.class);
 
   private final Executor callbackExecutor;
-  @Getter
-  private final SocketChannel channel;
-  @Getter
-  private final Queue<PendingRequest> pendingRequests = new ArrayDeque<>();
+  @Getter private final SocketChannel channel;
+  @Getter private final Queue<PendingRequest> pendingRequests = new ArrayDeque<>();
   private final Queue<PendingResponse> pendingResponses = new ArrayDeque<>();
   private final ByteBuffer readBuffer;
-  @Getter
-  private final SelectionKey selectionKey;
+  @Getter private final SelectionKey selectionKey;
 
   private boolean isWriteInterested = false;
-  @Getter
-  @Setter
-  private State state = State.OPEN;
+  @Getter @Setter private State state = State.OPEN;
 
-  SeriputConnection(String host, int port, Executor callbackExecutor, Selector selector, int readBufferSize) throws IOException {
+  SeriputConnection(
+      String host, int port, Executor callbackExecutor, Selector selector, int readBufferSize)
+      throws IOException {
     this.callbackExecutor = callbackExecutor;
     this.channel = SocketChannel.open();
     this.channel.configureBlocking(true);
@@ -125,7 +119,10 @@ final class SeriputConnection implements AutoCloseable {
         if (this.readBuffer.remaining() < headerSize()) {
           break;
         }
-        logger.info("Read buffer position: {}, remaining: {}", this.readBuffer.position(), this.readBuffer.remaining());
+        logger.info(
+            "Read buffer position: {}, remaining: {}",
+            this.readBuffer.position(),
+            this.readBuffer.remaining());
 
         int bodySize = bodySize(this.readBuffer);
         int frameSize = headerSize() + bodySize;
@@ -173,7 +170,8 @@ final class SeriputConnection implements AutoCloseable {
       }
 
       try {
-        this.callbackExecutor.execute(() -> nextToComplete.onCompleted().complete(nextToComplete.payload()));
+        this.callbackExecutor.execute(
+            () -> nextToComplete.onCompleted().complete(nextToComplete.payload()));
         this.pendingResponses.remove();
       } catch (RejectedExecutionException e) {
         logger.warn("Callback executor rejected completion; will retry later.", e);

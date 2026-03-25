@@ -1,8 +1,6 @@
 package io.seriput.common.serialization.request;
 
-/**
- * Represents the request operations supported by the current protocol.
- */
+/** Represents the request operations supported by the current protocol. */
 public enum RequestOp {
   GET(0x01),
   PUT(0x02),

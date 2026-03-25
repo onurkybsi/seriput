@@ -1,8 +1,6 @@
 package io.seriput.server.serialization.request;
 
-/**
- * Represents the operation requested by the client.
- */
+/** Represents the operation requested by the client. */
 enum RequestOp {
   GET(0x01),
   PUT(0x02),

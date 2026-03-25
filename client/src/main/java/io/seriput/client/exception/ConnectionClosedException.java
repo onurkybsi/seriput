@@ -3,8 +3,7 @@ package io.seriput.client.exception;
 import java.util.Objects;
 
 /**
- * Exception thrown when an operation could not be completed because the TCP
- * connection is closed.
+ * Exception thrown when an operation could not be completed because the TCP connection is closed.
  */
 public final class ConnectionClosedException extends SeriputClientException {
   public ConnectionClosedException(String message) {
@@ -18,10 +17,8 @@ public final class ConnectionClosedException extends SeriputClientException {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (!(o instanceof ConnectionClosedException that))
-      return false;
+    if (this == o) return true;
+    if (!(o instanceof ConnectionClosedException that)) return false;
     return Objects.equals(getMessage(), that.getMessage())
         && Objects.equals(getCause(), that.getCause());
   }

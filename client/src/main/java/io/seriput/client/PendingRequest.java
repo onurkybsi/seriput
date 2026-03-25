@@ -10,4 +10,5 @@ import java.util.concurrent.CompletableFuture;
  * @param onPayloadConsumed callback to invoke once the payload buffer is no longer needed
  * @param onCompleted callback to invoke once the response payload has been received
  */
-record PendingRequest(ByteBuffer payload, Runnable onPayloadConsumed, CompletableFuture<byte[]> onCompleted) {}
+record PendingRequest(
+    ByteBuffer payload, Runnable onPayloadConsumed, CompletableFuture<byte[]> onCompleted) {}

@@ -1,11 +1,10 @@
 package io.seriput.common;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.ByteBuffer;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 final class PooledByteBufferAllocatorTest {
   private final PooledByteBufferAllocator underTest = new PooledByteBufferAllocator();

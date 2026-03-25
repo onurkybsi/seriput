@@ -1,21 +1,22 @@
 package io.seriput.server;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.common.ObjectMapperProvider;
 import io.seriput.server.core.Value;
 import io.seriput.server.core.ValueType;
 import io.seriput.server.fixture.RequestFixtures;
 import io.seriput.server.serialization.response.ResponseSerializer;
+import java.util.Collections;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
 final class RequestHandlerImplTest {
-  private static final ResponseSerializer responseSerializer = new ResponseSerializer(new HeapByteBufferAllocator());
-  private static final RequestHandler underTest = new RequestHandlerImpl(responseSerializer, Collections.emptyList());
+  private static final ResponseSerializer responseSerializer =
+      new ResponseSerializer(new HeapByteBufferAllocator());
+  private static final RequestHandler underTest =
+      new RequestHandlerImpl(responseSerializer, Collections.emptyList());
 
   @Nested
   class Get {
@@ -23,10 +24,11 @@ final class RequestHandlerImplTest {
     void should_Return_Ok_Response_When_There_Is_A_Value_By_GivenKey() {
       // given
       String key = "user:1";
-      Object value = new Object() {
-        public final String name = "John Doe";
-        public final int age = 30;
-      };
+      Object value =
+          new Object() {
+            public final String name = "John Doe";
+            public final int age = 30;
+          };
       underTest.handle(RequestFixtures.serializePut(key, value));
       var requestPayload = RequestFixtures.serializeGet(key);
 
@@ -34,7 +36,9 @@ final class RequestHandlerImplTest {
       var actual = underTest.handle(requestPayload);
 
       // then
-      var expectedValue = new Value(ValueType.JSON_UTF8, ObjectMapperProvider.getInstance().writeValueAsBytes(value));
+      var expectedValue =
+          new Value(
+              ValueType.JSON_UTF8, ObjectMapperProvider.getInstance().writeValueAsBytes(value));
       var expected = responseSerializer.ok(expectedValue);
       assertThat(actual.array()).isEqualTo(expected.array());
     }
@@ -60,10 +64,11 @@ final class RequestHandlerImplTest {
     void should_Return_Ok_Response_When_Given_KeyValue_Stored_Successfully() {
       // given
       String key = "user:1";
-      Object value = new Object() {
-        public final String name = "John Doe";
-        public final int age = 30;
-      };
+      Object value =
+          new Object() {
+            public final String name = "John Doe";
+            public final int age = 30;
+          };
       var requestPayload = RequestFixtures.serializePut(key, value);
 
       // when
@@ -73,7 +78,9 @@ final class RequestHandlerImplTest {
       var expected = responseSerializer.ok();
       assertThat(actual.array()).isEqualTo(expected.array());
       var stored = underTest.handle(RequestFixtures.serializeGet(key));
-      var expectedStoredValue = new Value(ValueType.JSON_UTF8, ObjectMapperProvider.getInstance().writeValueAsBytes(value));
+      var expectedStoredValue =
+          new Value(
+              ValueType.JSON_UTF8, ObjectMapperProvider.getInstance().writeValueAsBytes(value));
       assertThat(stored.array()).isEqualTo(responseSerializer.ok(expectedStoredValue).array());
     }
   }
@@ -84,10 +91,11 @@ final class RequestHandlerImplTest {
     void should_Return_Ok_Response_When_There_Is_A_Value_Delete_By_GivenKey() {
       // given
       String key = "user:1";
-      Object value = new Object() {
-        public final String name = "John Doe";
-        public final int age = 30;
-      };
+      Object value =
+          new Object() {
+            public final String name = "John Doe";
+            public final int age = 30;
+          };
       underTest.handle(RequestFixtures.serializePut(key, value));
       var requestPayload = RequestFixtures.serializeDelete(key);
 

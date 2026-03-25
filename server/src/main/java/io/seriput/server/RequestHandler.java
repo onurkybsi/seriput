@@ -9,8 +9,8 @@ public interface RequestHandler {
    *
    * @param requestPayload request payload sent by the Seriput client
    * @return server response
-   * @implNote Note that, this method must not throw any exception!
-   * It should handle if there was an exception and return {@code INTERNAL_ERROR} response!
+   * @implNote Note that, this method must not throw any exception! It should handle if there was an
+   *     exception and return {@code INTERNAL_ERROR} response!
    */
   ByteBuffer handle(byte[] requestPayload);
 }

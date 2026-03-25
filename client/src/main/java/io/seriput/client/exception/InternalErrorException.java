@@ -1,18 +1,13 @@
 package io.seriput.client.exception;
 
+import java.util.Objects;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import java.util.Objects;
-
-/**
- * Exception thrown when an internal server error occurs in the Seriput
- * key-value store.
- */
+/** Exception thrown when an internal server error occurs in the Seriput key-value store. */
 @Accessors(fluent = true)
 public final class InternalErrorException extends SeriputClientException {
-  @Getter
-  private final Integer errorCode;
+  @Getter private final Integer errorCode;
 
   public InternalErrorException(String message, Integer errorCode) {
     super(message);
@@ -31,10 +26,8 @@ public final class InternalErrorException extends SeriputClientException {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (!(o instanceof InternalErrorException that))
-      return false;
+    if (this == o) return true;
+    if (!(o instanceof InternalErrorException that)) return false;
     return Objects.equals(errorCode, that.errorCode)
         && Objects.equals(getMessage(), that.getMessage())
         && Objects.equals(getCause(), that.getCause());
@@ -47,7 +40,13 @@ public final class InternalErrorException extends SeriputClientException {
 
   @Override
   public String toString() {
-    return "InternalErrorException(" + "message=" + getMessage() + ", cause=" + getCause() +
-        ", errorCode=" + errorCode + ')';
+    return "InternalErrorException("
+        + "message="
+        + getMessage()
+        + ", cause="
+        + getCause()
+        + ", errorCode="
+        + errorCode
+        + ')';
   }
 }

@@ -1,8 +1,6 @@
 package io.seriput.core;
 
-/**
- * Manages to access the cache instance.
- */
+/** Manages to access the cache instance. */
 public final class CacheManager {
   private static final Cache<Object, Object> cache = new CacheImpl<>();
 

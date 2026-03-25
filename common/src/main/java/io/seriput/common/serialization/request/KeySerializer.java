@@ -1,8 +1,6 @@
 package io.seriput.common.serialization.request;
 
-/**
- * Serializer for keys.
- */
+/** Serializer for keys. */
 sealed interface KeySerializer<T> permits Utf8StringKeySerializer {
   /**
    * Serializes the given key.

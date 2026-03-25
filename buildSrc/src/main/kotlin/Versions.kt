@@ -12,4 +12,5 @@ object Versions {
     const val MOCKITO = "5.21.0"
     const val AWAITILITY = "4.3.0"
     const val TESTCONTAINERS = "1.20.4"
+    const val SPOTLESS = "7.0.4"
 }

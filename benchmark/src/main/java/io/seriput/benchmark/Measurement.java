@@ -1,12 +1,11 @@
 package io.seriput.benchmark;
 
-import org.HdrHistogram.Histogram;
-import org.HdrHistogram.Recorder;
-
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
+import org.HdrHistogram.Histogram;
+import org.HdrHistogram.Recorder;
 
 final class Measurement {
   static final long MAX_LATENCY_MICROS = TimeUnit.SECONDS.toMicros(10);

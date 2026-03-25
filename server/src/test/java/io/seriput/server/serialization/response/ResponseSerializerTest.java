@@ -1,5 +1,7 @@
 package io.seriput.server.serialization.response;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 import io.seriput.common.HeapByteBufferAllocator;
@@ -10,10 +12,9 @@ import io.seriput.server.core.ValueType;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
 final class ResponseSerializerTest {
-  private final ResponseSerializer underTest = new ResponseSerializer(new HeapByteBufferAllocator());
+  private final ResponseSerializer underTest =
+      new ResponseSerializer(new HeapByteBufferAllocator());
 
   @Nested
   class OkResponse {
@@ -26,12 +27,12 @@ final class ResponseSerializerTest {
       var actual = underTest.ok(value);
 
       // then
-      var expected = Bytes.concat(
-        new byte[] { ResponseStatus.OK.status() },
-        new byte[] { ResponseValueType.fromByte(value.type().typeId()).typeId() },
-        Ints.toByteArray(value.bytes().length),
-        value.bytes()
-      );
+      var expected =
+          Bytes.concat(
+              new byte[] {ResponseStatus.OK.status()},
+              new byte[] {ResponseValueType.fromByte(value.type().typeId()).typeId()},
+              Ints.toByteArray(value.bytes().length),
+              value.bytes());
       assertThat(actual.array()).isEqualTo(expected);
       assertThat(actual.position()).isEqualTo(0);
       assertThat(actual.limit()).isEqualTo(expected.length);
@@ -45,11 +46,11 @@ final class ResponseSerializerTest {
       var actual = underTest.ok();
 
       // then
-      var expected = Bytes.concat(
-        new byte[] { ResponseStatus.OK.status() },
-        new byte[] { ResponseValueType.VOID.typeId() },
-        Ints.toByteArray(0 /* valueLength */)
-      );
+      var expected =
+          Bytes.concat(
+              new byte[] {ResponseStatus.OK.status()},
+              new byte[] {ResponseValueType.VOID.typeId()},
+              Ints.toByteArray(0 /* valueLength */));
       assertThat(actual.array()).isEqualTo(expected);
       assertThat(actual.position()).isEqualTo(0);
       assertThat(actual.limit()).isEqualTo(expected.length);
@@ -66,11 +67,11 @@ final class ResponseSerializerTest {
       var actual = underTest.notFound();
 
       // then
-      var expected = Bytes.concat(
-        new byte[] { ResponseStatus.NOT_FOUND.status() },
-        new byte[] { ResponseValueType.VOID.typeId() },
-        Ints.toByteArray(0 /* valueLength */)
-      );
+      var expected =
+          Bytes.concat(
+              new byte[] {ResponseStatus.NOT_FOUND.status()},
+              new byte[] {ResponseValueType.VOID.typeId()},
+              Ints.toByteArray(0 /* valueLength */));
       assertThat(actual.array()).isEqualTo(expected);
       assertThat(actual.position()).isEqualTo(0);
       assertThat(actual.limit()).isEqualTo(expected.length);
@@ -87,11 +88,11 @@ final class ResponseSerializerTest {
       var actual = underTest.internalError();
 
       // then
-      var expected = Bytes.concat(
-        new byte[] { ResponseStatus.INTERNAL_ERROR.status() },
-        new byte[] { ResponseValueType.VOID.typeId() },
-        Ints.toByteArray(0 /* valueLength */)
-      );
+      var expected =
+          Bytes.concat(
+              new byte[] {ResponseStatus.INTERNAL_ERROR.status()},
+              new byte[] {ResponseValueType.VOID.typeId()},
+              Ints.toByteArray(0 /* valueLength */));
       assertThat(actual.array()).isEqualTo(expected);
       assertThat(actual.position()).isEqualTo(0);
       assertThat(actual.limit()).isEqualTo(expected.length);

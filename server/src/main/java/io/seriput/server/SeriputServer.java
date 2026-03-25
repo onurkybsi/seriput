@@ -1,11 +1,7 @@
 package io.seriput.server;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.server.serialization.response.ResponseSerializer;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
@@ -15,10 +11,10 @@ import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-/**
- * Seriput server that manages the Seriput connections and the event loop.
- */
+/** Seriput server that manages the Seriput connections and the event loop. */
 public final class SeriputServer implements AutoCloseable {
   private static final Logger logger = LogManager.getLogger(SeriputServer.class);
 
@@ -30,12 +26,15 @@ public final class SeriputServer implements AutoCloseable {
   private final Selector selector;
   private final Thread serverThread = new Thread(this::startEventLoop, "server");
   private final AtomicReference<State> state = new AtomicReference<>(State.READY);
+
   // endregion
 
   public SeriputServer(int port) throws IOException {
     this.channel = ServerSocketChannel.open();
     this.port = port;
-    this.requestHandler = new RequestHandlerImpl(new ResponseSerializer(new HeapByteBufferAllocator()), Collections.emptyList());
+    this.requestHandler =
+        new RequestHandlerImpl(
+            new ResponseSerializer(new HeapByteBufferAllocator()), Collections.emptyList());
     this.selector = Selector.open();
   }
 
@@ -101,6 +100,7 @@ public final class SeriputServer implements AutoCloseable {
   State state() {
     return this.state.get();
   }
+
   // endregion
 
   private void startEventLoop() {
@@ -129,24 +129,25 @@ public final class SeriputServer implements AutoCloseable {
   }
 
   private void select() throws IOException {
-    this.selector.select(key -> {
-      try {
-        if (!key.isValid()) {
-          return;
-        }
-        if (key.isAcceptable()) {
-          accept(key);
-        }
-        if (key.isReadable() && key.attachment() instanceof SeriputConnection) {
-          ((SeriputConnection) key.attachment()).read();
-        }
-        if (key.isWritable() && key.attachment() instanceof SeriputConnection) {
-          ((SeriputConnection) key.attachment()).write();
-        }
-      } catch (Exception e) {
-        logger.error("Exception occurred when processing key: {}", e.getMessage(), e);
-      }
-    });
+    this.selector.select(
+        key -> {
+          try {
+            if (!key.isValid()) {
+              return;
+            }
+            if (key.isAcceptable()) {
+              accept(key);
+            }
+            if (key.isReadable() && key.attachment() instanceof SeriputConnection) {
+              ((SeriputConnection) key.attachment()).read();
+            }
+            if (key.isWritable() && key.attachment() instanceof SeriputConnection) {
+              ((SeriputConnection) key.attachment()).write();
+            }
+          } catch (Exception e) {
+            logger.error("Exception occurred when processing key: {}", e.getMessage(), e);
+          }
+        });
   }
 
   private void accept(SelectionKey key) throws IOException {
@@ -158,7 +159,9 @@ public final class SeriputServer implements AutoCloseable {
 
     var client = SeriputClient.from(connection);
     var clientConnections = this.connections.getOrDefault(client, new HashSet<>());
-    var seriputConnection = new SeriputConnection(client, clientConnections.size(), connection, requestHandler, this.selector);
+    var seriputConnection =
+        new SeriputConnection(
+            client, clientConnections.size(), connection, requestHandler, this.selector);
     clientConnections.add(seriputConnection);
     connection.configureBlocking(false);
     connection.register(this.selector, SelectionKey.OP_READ, seriputConnection);
@@ -168,17 +171,18 @@ public final class SeriputServer implements AutoCloseable {
 
   private void maybeClose() throws IOException {
     for (SelectionKey key : this.selector.keys()) {
-      if (!key.isValid())
-        continue;
-      if (!(key.attachment() instanceof SeriputConnection seriputConnection))
-        continue;
+      if (!key.isValid()) continue;
+      if (!(key.attachment() instanceof SeriputConnection seriputConnection)) continue;
       if (SeriputConnection.State.CLOSING.equals(seriputConnection.state())) {
         try {
           key.cancel();
           seriputConnection.workerThread().interrupt();
           seriputConnection.connection().close();
         } catch (IOException e) {
-          logger.error("Exception occurred during closing the connection {}!", seriputConnection.connection(), e);
+          logger.error(
+              "Exception occurred during closing the connection {}!",
+              seriputConnection.connection(),
+              e);
         } finally {
           seriputConnection.state(SeriputConnection.State.CLOSED);
           this.connections.get(seriputConnection.client()).remove(seriputConnection);
@@ -192,10 +196,8 @@ public final class SeriputServer implements AutoCloseable {
 
   private void setWriteInterest() {
     for (SelectionKey key : selector.keys()) {
-      if (!key.isValid())
-        continue;
-      if (!(key.attachment() instanceof SeriputConnection connection))
-        continue;
+      if (!key.isValid()) continue;
+      if (!(key.attachment() instanceof SeriputConnection connection)) continue;
       if (connection.isReadyToWrite()) {
         key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
       } else {
@@ -206,10 +208,8 @@ public final class SeriputServer implements AutoCloseable {
 
   private void closeConnections() {
     for (SelectionKey key : this.selector.keys()) {
-      if (!key.isValid())
-        continue;
-      if (!(key.attachment() instanceof SeriputConnection seriputConnection))
-        continue;
+      if (!key.isValid()) continue;
+      if (!(key.attachment() instanceof SeriputConnection seriputConnection)) continue;
       try {
         seriputConnection.state(SeriputConnection.State.CLOSING);
         key.cancel();
@@ -218,7 +218,10 @@ public final class SeriputServer implements AutoCloseable {
         seriputConnection.workerThread().join(Duration.ofSeconds(1));
         seriputConnection.connection().close();
       } catch (InterruptedException | IOException e) {
-        logger.warn("Exception occurred during closing the connection {}!", seriputConnection.connection(), e);
+        logger.warn(
+            "Exception occurred during closing the connection {}!",
+            seriputConnection.connection(),
+            e);
       } finally {
         seriputConnection.state(SeriputConnection.State.CLOSED);
         this.connections.get(seriputConnection.client()).remove(seriputConnection);

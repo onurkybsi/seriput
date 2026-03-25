@@ -10,7 +10,7 @@ public interface Cache<K, V> {
   /**
    * Puts a key-value pair into the cache.
    *
-   * @param key   the key
+   * @param key the key
    * @param value the value
    * @throws NullPointerException if {@code key} or {@code value} is {@code null}
    */
@@ -49,8 +49,6 @@ public interface Cache<K, V> {
    */
   int size();
 
-  /**
-   * Clears all key-value pairs from the cache.
-   */
+  /** Clears all key-value pairs from the cache. */
   void clear();
 }

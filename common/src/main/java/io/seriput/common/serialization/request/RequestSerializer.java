@@ -1,7 +1,6 @@
 package io.seriput.common.serialization.request;
 
 import io.seriput.common.ByteBufferAllocator;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -11,20 +10,25 @@ import java.nio.ByteBuffer;
  * @param <V> value type
  */
 public final class RequestSerializer<K, V> {
-  private static final int HEADER_SIZE = 1 + 1 + 1 + 4 + 4; // op + keyTypeId + valueTypeId + keyLength + valueLength
+  private static final int HEADER_SIZE =
+      1 + 1 + 1 + 4 + 4; // op + keyTypeId + valueTypeId + keyLength + valueLength
 
   private final KeySerializer<K> keySerializer;
   private final ValueSerializer<V> valueSerializer;
   private final ByteBufferAllocator allocator;
 
-  private RequestSerializer(KeySerializer<K> keySerializer, ValueSerializer<V> valueSerializer, ByteBufferAllocator allocator) {
+  private RequestSerializer(
+      KeySerializer<K> keySerializer,
+      ValueSerializer<V> valueSerializer,
+      ByteBufferAllocator allocator) {
     this.keySerializer = keySerializer;
     this.valueSerializer = valueSerializer;
     this.allocator = allocator;
   }
 
   /**
-   * Builds a {@code RequestSerializer} by given {@code keyType}, {@code valueType}, and {@code allocator}.
+   * Builds a {@code RequestSerializer} by given {@code keyType}, {@code valueType}, and {@code
+   * allocator}.
    *
    * @param keyType key type to serialize
    * @param valueType value type to serialize
@@ -32,13 +36,17 @@ public final class RequestSerializer<K, V> {
    * @return built {@code RequestSerializer} instance
    */
   @SuppressWarnings("unchecked")
-  public static <K, V> RequestSerializer<K, V> build(KeyType keyType, ValueType valueType, ByteBufferAllocator allocator) {
-    KeySerializer<K> keySerializer = (KeySerializer<K>) switch (keyType) {
-      case UTF8 -> new Utf8StringKeySerializer();
-    };
-    ValueSerializer<V> valueSerializer = switch (valueType) {
-      case JSON_UTF8 -> new JsonUtf8ValueSerializer<>();
-    };
+  public static <K, V> RequestSerializer<K, V> build(
+      KeyType keyType, ValueType valueType, ByteBufferAllocator allocator) {
+    KeySerializer<K> keySerializer =
+        (KeySerializer<K>)
+            switch (keyType) {
+              case UTF8 -> new Utf8StringKeySerializer();
+            };
+    ValueSerializer<V> valueSerializer =
+        switch (valueType) {
+          case JSON_UTF8 -> new JsonUtf8ValueSerializer<>();
+        };
     return new RequestSerializer<>(keySerializer, valueSerializer, allocator);
   }
 
@@ -71,7 +79,8 @@ public final class RequestSerializer<K, V> {
   public ByteBuffer serializePut(K key, V value) {
     byte[] serializedKey = keySerializer.serialize(key);
     byte[] serializedValue = valueSerializer.serialize(value);
-    ByteBuffer buffer = allocator.allocate(HEADER_SIZE + serializedKey.length + serializedValue.length);
+    ByteBuffer buffer =
+        allocator.allocate(HEADER_SIZE + serializedKey.length + serializedValue.length);
     buffer.put(RequestOp.PUT.op());
     buffer.put(keySerializer.typeId());
     buffer.put(valueSerializer.typeId());

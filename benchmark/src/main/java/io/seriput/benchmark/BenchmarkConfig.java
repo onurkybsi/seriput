@@ -3,11 +3,11 @@ package io.seriput.benchmark;
 /**
  * Configuration for throughput benchmarks.
  *
- * @param port        server port
+ * @param port server port
  * @param concurrency connection pool size
- * @param warmupSec   warm-up phase duration in seconds
- * @param testSec     measurement phase duration in seconds
- * @param targetRps   target requests per second
+ * @param warmupSec warm-up phase duration in seconds
+ * @param testSec measurement phase duration in seconds
+ * @param targetRps target requests per second
  */
 record BenchmarkConfig(int port, int concurrency, int warmupSec, int testSec, int targetRps) {
   static final int DEFAULT_PORT = 9090;
@@ -31,6 +31,7 @@ record BenchmarkConfig(int port, int concurrency, int warmupSec, int testSec, in
       targetRps = Integer.parseInt(args[1]);
     }
 
-    return new BenchmarkConfig(DEFAULT_PORT, concurrency, DEFAULT_WARMUP_SEC, DEFAULT_TEST_SEC, targetRps);
+    return new BenchmarkConfig(
+        DEFAULT_PORT, concurrency, DEFAULT_WARMUP_SEC, DEFAULT_TEST_SEC, targetRps);
   }
 }

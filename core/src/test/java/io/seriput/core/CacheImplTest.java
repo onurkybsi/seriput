@@ -1,10 +1,10 @@
 package io.seriput.core;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 final class CacheImplTest {
   private final CacheImpl<String, String> underTest = new CacheImpl<>();

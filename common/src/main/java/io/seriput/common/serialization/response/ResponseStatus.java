@@ -1,8 +1,6 @@
 package io.seriput.common.serialization.response;
 
-/**
- * Response status codes in Seriput protocol v1.
- */
+/** Response status codes in Seriput protocol v1. */
 public enum ResponseStatus {
   OK((byte) 0x00),
   INVALID_REQUEST((byte) 0x01),

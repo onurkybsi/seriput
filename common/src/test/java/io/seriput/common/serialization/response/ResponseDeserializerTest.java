@@ -1,13 +1,12 @@
 package io.seriput.common.serialization.response;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 final class ResponseDeserializerTest {
   private static final String TEST_VALUE = "{\"firstName\":\"John\",\"lastName\":\"Doe\"}";
@@ -47,7 +46,7 @@ final class ResponseDeserializerTest {
 
       // when & then
       assertThatThrownBy(() -> ResponseDeserializer.bodySize(buffer))
-        .hasMessage("Buffer does not contain the full header yet!");
+          .hasMessage("Buffer does not contain the full header yet!");
     }
 
     @Test
@@ -63,11 +62,12 @@ final class ResponseDeserializerTest {
 
       // when & then
       assertThatThrownBy(() -> underTest.deserialize(buffer, valueType))
-        .hasMessage("'status' is not valid: 4");
+          .hasMessage("'status' is not valid: 4");
     }
 
     @Test
-    void should_Throw_IllegalStateException_When_Given_Buffer_Does_Not_Contain_A_ValidValueTypeId() {
+    void
+        should_Throw_IllegalStateException_When_Given_Buffer_Does_Not_Contain_A_ValidValueTypeId() {
       // given
       ByteBuffer buffer = ByteBuffer.allocate(6 + TEST_VALUE.length());
       buffer.put(ResponseStatus.OK.status());
@@ -79,7 +79,7 @@ final class ResponseDeserializerTest {
 
       // when & then
       assertThatThrownBy(() -> underTest.deserialize(buffer, valueType))
-        .hasMessage("'valueTypeId' is not valid: 2");
+          .hasMessage("'valueTypeId' is not valid: 2");
     }
 
     @Test
@@ -94,7 +94,7 @@ final class ResponseDeserializerTest {
 
       // when & then
       assertThatThrownBy(() -> underTest.deserialize(buffer, valueType))
-        .hasMessage("Buffer does not contain the full response yet!");
+          .hasMessage("Buffer does not contain the full response yet!");
     }
   }
 
@@ -139,7 +139,7 @@ final class ResponseDeserializerTest {
 
       // when & then
       assertThatThrownBy(() -> ResponseDeserializer.bodySize(buffer))
-        .hasMessage("Buffer does not contain the full header yet!");
+          .hasMessage("Buffer does not contain the full header yet!");
     }
   }
 

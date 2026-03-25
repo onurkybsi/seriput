@@ -4,9 +4,9 @@ import java.nio.ByteBuffer;
 
 /**
  * Interceptor for request processing in the Seriput server.
- * <p>
- * Note that interceptors <b>MUST NOT</b> modify the request or response payloads!
- * That's why the interface is package-private and not intended for public use.
+ *
+ * <p>Note that interceptors <b>MUST NOT</b> modify the request or response payloads! That's why the
+ * interface is package-private and not intended for public use.
  */
 interface RequestInterceptor {
   /**

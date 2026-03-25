@@ -3,9 +3,7 @@ package io.seriput.server.core;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * A simple thread-safe cache implementation using {@code ConcurrentHashMap} under the hood.
- */
+/** A simple thread-safe cache implementation using {@code ConcurrentHashMap} under the hood. */
 public final class Cache {
   private static final ConcurrentHashMap<Key, Value> cache = new ConcurrentHashMap<>();
 

@@ -1,9 +1,8 @@
 package io.seriput.common.serialization.request;
 
 import io.seriput.common.ObjectMapperProvider;
-import tools.jackson.databind.ObjectMapper;
-
 import java.util.Objects;
+import tools.jackson.databind.ObjectMapper;
 
 final class JsonUtf8ValueSerializer<T> implements ValueSerializer<T> {
   private static final ObjectMapper objectMapper = ObjectMapperProvider.getInstance();

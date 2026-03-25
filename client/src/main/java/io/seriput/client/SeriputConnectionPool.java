@@ -1,8 +1,5 @@
 package io.seriput.client;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedSelectorException;
@@ -12,6 +9,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 final class SeriputConnectionPool implements AutoCloseable {
   private static final Logger logger = LogManager.getLogger(SeriputConnectionPool.class.getName());
@@ -25,15 +24,22 @@ final class SeriputConnectionPool implements AutoCloseable {
   private final Thread poolThread;
   private final Selector selector;
 
-  SeriputConnectionPool(String host, int port, int poolSize, ExecutorService callbackExecutor,
-                         int readBufferSize, int maxOutboundQueueSize) throws IOException {
+  SeriputConnectionPool(
+      String host,
+      int port,
+      int poolSize,
+      ExecutorService callbackExecutor,
+      int readBufferSize,
+      int maxOutboundQueueSize)
+      throws IOException {
     this.callbackExecutor = callbackExecutor;
     this.maxOutboundQueueSize = maxOutboundQueueSize;
     this.poolThread = new Thread(this::startEventLoop, "seriput-connection-pool");
     this.poolThread.setDaemon(false);
     this.selector = Selector.open();
     for (int i = 0; i < poolSize; i++) {
-      this.connectionPool.add(new SeriputConnection(host, port, callbackExecutor, this.selector, readBufferSize));
+      this.connectionPool.add(
+          new SeriputConnection(host, port, callbackExecutor, this.selector, readBufferSize));
     }
   }
 
@@ -53,10 +59,11 @@ final class SeriputConnectionPool implements AutoCloseable {
   }
 
   // Starts the connection pool's event loop.
-  void start()  {
+  void start() {
     if (this.isRunning.compareAndSet(false, true)) {
       this.poolThread.start();
-      logger.info("Seriput connection pool started with {} connections!", this.connectionPool.size());
+      logger.info(
+          "Seriput connection pool started with {} connections!", this.connectionPool.size());
     }
   }
 
@@ -84,18 +91,20 @@ final class SeriputConnectionPool implements AutoCloseable {
 
   private void select() {
     try {
-      this.selector.select(selectionKey -> {
-        if (!selectionKey.isValid() || !(selectionKey.attachment() instanceof SeriputConnection conn)) {
-          return;
-        }
+      this.selector.select(
+          selectionKey -> {
+            if (!selectionKey.isValid()
+                || !(selectionKey.attachment() instanceof SeriputConnection conn)) {
+              return;
+            }
 
-        if (selectionKey.isWritable()) {
-          conn.write();
-        }
-        if (selectionKey.isReadable()) {
-          conn.read();
-        }
-      });
+            if (selectionKey.isWritable()) {
+              conn.write();
+            }
+            if (selectionKey.isReadable()) {
+              conn.read();
+            }
+          });
     } catch (ClosedSelectorException e) {
       logger.debug("Selector was closed...", e);
     } catch (IOException e) {
@@ -126,7 +135,7 @@ final class SeriputConnectionPool implements AutoCloseable {
 
   private void maybeRemoveWriteInterest() {
     if (this.isRunning.get()) {
-      for(var conn : this.connectionPool) {
+      for (var conn : this.connectionPool) {
         if (conn.pendingRequests().isEmpty()) {
           conn.maybeSetWriteInterest(false);
         }
@@ -140,7 +149,8 @@ final class SeriputConnectionPool implements AutoCloseable {
       while ((pendingRequest = this.outboundQueue.poll()) != null) {
         SeriputConnection conn = next();
         if (conn == null || conn.pendingRequests().size() >= this.maxOutboundQueueSize) {
-          this.outboundQueue.offer(pendingRequest); // Re-enqueue the request if no connection is available
+          this.outboundQueue.offer(
+              pendingRequest); // Re-enqueue the request if no connection is available
           return;
         }
         conn.enqueue(pendingRequest);
@@ -150,30 +160,33 @@ final class SeriputConnectionPool implements AutoCloseable {
   }
 
   private SeriputConnection next() {
-    return this.connectionPool
-      .stream()
-      .filter(c -> SeriputConnection.State.OPEN.equals(c.state()))
-      .min(Comparator.comparingInt(conn -> conn.pendingRequests().size()))
-      .orElse(null);
+    return this.connectionPool.stream()
+        .filter(c -> SeriputConnection.State.OPEN.equals(c.state()))
+        .min(Comparator.comparingInt(conn -> conn.pendingRequests().size()))
+        .orElse(null);
   }
 
   private void clearOutboundQueue() {
     int numOfPendingRequestCleared = 0;
     PendingRequest pendingRequest;
-    while ((pendingRequest = this.outboundQueue.poll()) != null) { // If not yet dispatched, complete exceptionally
+    while ((pendingRequest = this.outboundQueue.poll())
+        != null) { // If not yet dispatched, complete exceptionally
       final PendingRequest request = pendingRequest;
       try {
         request.onPayloadConsumed().run();
-        this.callbackExecutor.execute(() ->
-          request
-            .onCompleted()
-            .completeExceptionally(new IllegalStateException("Connection pool is shutting down!"))
-        );
+        this.callbackExecutor.execute(
+            () ->
+                request
+                    .onCompleted()
+                    .completeExceptionally(
+                        new IllegalStateException("Connection pool is shutting down!")));
       } catch (RejectedExecutionException e) {
-        logger.warn("Callback executor rejected the pending request, completing on the event loop's thread!", e);
+        logger.warn(
+            "Callback executor rejected the pending request, completing on the event loop's thread!",
+            e);
         request
-          .onCompleted()
-          .completeExceptionally(new IllegalStateException("Connection pool is shutting down!"));
+            .onCompleted()
+            .completeExceptionally(new IllegalStateException("Connection pool is shutting down!"));
       } finally {
         numOfPendingRequestCleared++;
       }

@@ -7,7 +7,6 @@ import io.seriput.common.serialization.request.ValueType;
 import io.seriput.common.serialization.response.Response;
 import io.seriput.common.serialization.response.ResponseDeserializer;
 import io.seriput.server.serialization.response.ResponseSerializer;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -15,7 +14,8 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 
 public final class SeriputClient implements Closeable {
-  private static final RequestSerializer<String, Object> serializer = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8, new HeapByteBufferAllocator());
+  private static final RequestSerializer<String, Object> serializer =
+      RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8, new HeapByteBufferAllocator());
   private static final ResponseDeserializer deserializer = ResponseDeserializer.build();
 
   private final String host;
@@ -99,7 +99,8 @@ public final class SeriputClient implements Closeable {
     ByteBuffer responseHeader = read(ResponseSerializer.HEADER_SIZE);
     int length = responseHeader.getInt(ResponseSerializer.VALUE_LENGTH_OFFSET);
     ByteBuffer responseBody = read(length);
-    ByteBuffer response = ByteBuffer.allocate(responseHeader.remaining() + responseBody.remaining());
+    ByteBuffer response =
+        ByteBuffer.allocate(responseHeader.remaining() + responseBody.remaining());
     response.put(responseHeader);
     response.put(responseBody);
     response.flip();

@@ -6,7 +6,6 @@ import io.seriput.server.serialization.request.GetRequest;
 import io.seriput.server.serialization.request.PutRequest;
 import io.seriput.server.serialization.request.RequestDeserializer;
 import io.seriput.server.serialization.response.ResponseSerializer;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,11 +24,12 @@ final class RequestHandlerImpl implements RequestHandler {
   public ByteBuffer handle(byte[] requestPayload) {
     var deserialized = RequestDeserializer.deserialize(requestPayload);
     this.interceptors.forEach(i -> i.before(requestPayload));
-    var response = switch (deserialized) {
-      case GetRequest getRequest -> get(getRequest);
-      case PutRequest putRequest -> put(putRequest);
-      case DeleteRequest deleteRequest -> delete(deleteRequest);
-    };
+    var response =
+        switch (deserialized) {
+          case GetRequest getRequest -> get(getRequest);
+          case PutRequest putRequest -> put(putRequest);
+          case DeleteRequest deleteRequest -> delete(deleteRequest);
+        };
     this.interceptors.forEach(i -> i.after(requestPayload, response));
     return response;
   }

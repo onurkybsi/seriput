@@ -1,7 +1,7 @@
 package io.seriput.server;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import static io.seriput.server.serialization.request.RequestDeserializer.bodySize;
+import static io.seriput.server.serialization.request.RequestDeserializer.headerSize;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -14,14 +14,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static io.seriput.server.serialization.request.RequestDeserializer.bodySize;
-import static io.seriput.server.serialization.request.RequestDeserializer.headerSize;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Manages a single Seriput connection lifecycle.
- * <p>
- * Note that this class is NOT thread-safe, and it is designed to be used within the event loop.
+ *
+ * <p>Note that this class is NOT thread-safe, and it is designed to be used within the event loop.
  */
 final class SeriputConnection {
   private static final Logger logger = LogManager.getLogger(SeriputConnection.class.getName());
@@ -39,9 +38,15 @@ final class SeriputConnection {
   private final Selector selector;
   private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
   private final Thread workerThread;
+
   // endregion
 
-  SeriputConnection(SeriputClient client, int clientConnectionIx, ByteChannel connection, RequestHandler requestHandler, Selector selector) {
+  SeriputConnection(
+      SeriputClient client,
+      int clientConnectionIx,
+      ByteChannel connection,
+      RequestHandler requestHandler,
+      Selector selector) {
     this.client = client;
     this.clientConnectionIx = clientConnectionIx;
     this.connection = connection;
@@ -52,7 +57,7 @@ final class SeriputConnection {
 
   // region Getter & setters
   SeriputClient client() {
-   return this.client;
+    return this.client;
   }
 
   ByteChannel connection() {
@@ -70,24 +75,20 @@ final class SeriputConnection {
   Thread workerThread() {
     return this.workerThread;
   }
+
   // endregion
 
-  /**
-   * Reads as much as data available from the connection open with the client.
-   */
+  /** Reads as much as data available from the connection open with the client. */
   void read() {
     if (this.state.get() != State.OPEN) {
       throw new IllegalStateException("Unexpected connection state: " + this.state.get());
     }
-    if (!doRead())
-      return;
+    if (!doRead()) return;
     maybeDispatch();
     // TODO: Add readBuffer capacity check!
   }
 
-  /**
-   * Writes the pending responses to the connection open with the client.
-   */
+  /** Writes the pending responses to the connection open with the client. */
   void write() {
     if (!State.OPEN.equals(this.state.get())) {
       throw new IllegalStateException("Unexpected connection state: " + this.state.get());
@@ -96,7 +97,8 @@ final class SeriputConnection {
       ByteBuffer response;
       while ((response = this.outboundQueue.peek()) != null) {
         this.connection.write(response);
-        if (response.hasRemaining()) { // OS send buffer is full, stop writing but keep OP_WRITE enabled
+        if (response
+            .hasRemaining()) { // OS send buffer is full, stop writing but keep OP_WRITE enabled
           return;
         }
         this.outboundQueue.remove();
@@ -105,11 +107,13 @@ final class SeriputConnection {
       this.isReadyToWrite.compareAndSet(true, false);
     } catch (IOException e) {
       if (e instanceof ClosedChannelException) {
-        logger.warn("Client closed the connection! Outbound queue size: {}", this.outboundQueue.size());
+        logger.warn(
+            "Client closed the connection! Outbound queue size: {}", this.outboundQueue.size());
       } else {
         logger.error("Exception occurred during writing: {}", e.getMessage(), e);
       }
-      this.state.compareAndSet(State.OPEN, State.CLOSING); // SeriputServer is going to close the connection
+      this.state.compareAndSet(
+          State.OPEN, State.CLOSING); // SeriputServer is going to close the connection
     }
   }
 
@@ -119,7 +123,9 @@ final class SeriputConnection {
    * @return {@code true} if ready to write, {@code false} otherwise
    */
   boolean isReadyToWrite() {
-    return State.OPEN.equals(this.state.get()) && this.isReadyToWrite.get() && !this.outboundQueue.isEmpty();
+    return State.OPEN.equals(this.state.get())
+        && this.isReadyToWrite.get()
+        && !this.outboundQueue.isEmpty();
   }
 
   private boolean doRead() {
@@ -169,29 +175,36 @@ final class SeriputConnection {
   }
 
   private Thread startWorkerThread() {
-    return Thread.ofVirtual().name(workerThreadName(this.client, this.clientConnectionIx)).start(() -> {
-      while (State.OPEN.equals(this.state.get())) {
-        try {
-          byte[] request = this.inboundQueue.take();
-          ByteBuffer response = this.requestHandler.handle(request);
-          this.outboundQueue.add(response);
-          if (this.isReadyToWrite.compareAndSet(false, true)) { // In order to prevent unnecessary selector.wakeup() calls
-            this.selector.wakeup();
-          }
-        } catch (Exception e) {
-          if (e instanceof InterruptedException && this.state.get().isClosureInProgress()) {
-            logger.debug("Worked thread interrupted...");
-            break; // Exit gracefully
-          }
-          logger.error("Exception occurred during handling the request!", e);
-        }
-      }
-      logger.info("Worker thread is exiting, size of the inbound queue: {}", this.inboundQueue.size());
-    });
+    return Thread.ofVirtual()
+        .name(workerThreadName(this.client, this.clientConnectionIx))
+        .start(
+            () -> {
+              while (State.OPEN.equals(this.state.get())) {
+                try {
+                  byte[] request = this.inboundQueue.take();
+                  ByteBuffer response = this.requestHandler.handle(request);
+                  this.outboundQueue.add(response);
+                  if (this.isReadyToWrite.compareAndSet(
+                      false, true)) { // In order to prevent unnecessary selector.wakeup() calls
+                    this.selector.wakeup();
+                  }
+                } catch (Exception e) {
+                  if (e instanceof InterruptedException && this.state.get().isClosureInProgress()) {
+                    logger.debug("Worked thread interrupted...");
+                    break; // Exit gracefully
+                  }
+                  logger.error("Exception occurred during handling the request!", e);
+                }
+              }
+              logger.info(
+                  "Worker thread is exiting, size of the inbound queue: {}",
+                  this.inboundQueue.size());
+            });
   }
 
   private static String workerThreadName(SeriputClient client, int clientConnectionIx) {
-    return "seriput-worker[client=%s:%s,conn=%s]".formatted(client.address().getHostName(), client.port(), clientConnectionIx);
+    return "seriput-worker[client=%s:%s,conn=%s]"
+        .formatted(client.address().getHostName(), client.port(), clientConnectionIx);
   }
 
   enum State {

@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <K> type of keys maintained by the cache
  * @param <V> type of values
  */
-final class CacheImpl <K, V> implements Cache<K, V> {
+final class CacheImpl<K, V> implements Cache<K, V> {
   private static final ConcurrentHashMap<Object, Object> cache = new ConcurrentHashMap<>();
 
   @Override
@@ -34,7 +34,7 @@ final class CacheImpl <K, V> implements Cache<K, V> {
 
   @Override
   public boolean containsKey(K key) {
-    if(key == null) {
+    if (key == null) {
       return false;
     }
     return cache.containsKey(key);

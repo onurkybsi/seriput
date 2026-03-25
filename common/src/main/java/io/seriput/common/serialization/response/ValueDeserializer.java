@@ -1,8 +1,6 @@
 package io.seriput.common.serialization.response;
 
-/**
- * Deserializer for values.
- */
+/** Deserializer for values. */
 interface ValueDeserializer {
   /**
    * Deserializes the given value.

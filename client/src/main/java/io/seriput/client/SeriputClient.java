@@ -9,13 +9,12 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface SeriputClient extends AutoCloseable {
   /**
-   * Retrieves the value associated with the given key from Seriput key-value
-   * store.
+   * Retrieves the value associated with the given key from Seriput key-value store.
    *
-   * @param key       key whose associated value is to be returned
+   * @param key key whose associated value is to be returned
    * @param valueType class instance of the value type
-   * @return a {@link CompletableFuture} that, when completed, will contain the
-   *         value associated with the specified key
+   * @return a {@link CompletableFuture} that, when completed, will contain the value associated
+   *     with the specified key
    * @param <T> type of the value
    */
   <T> CompletableFuture<T> get(String key, Class<T> valueType);
@@ -23,10 +22,10 @@ public interface SeriputClient extends AutoCloseable {
   /**
    * Associates the given value with given key in Seriput key-value store.
    *
-   * @param key   key with which the given value is to be associated
+   * @param key key with which the given value is to be associated
    * @param value value to be associated with the given key
-   * @return a {@link CompletableFuture} that, when completed, indicates that the
-   *         operation has finished
+   * @return a {@link CompletableFuture} that, when completed, indicates that the operation has
+   *     finished
    * @param <T> type of the value
    */
   <T> CompletableFuture<Void> put(String key, T value);
@@ -35,8 +34,8 @@ public interface SeriputClient extends AutoCloseable {
    * Deletes the value associated with the given key from Seriput key-value store.
    *
    * @param key key whose associated value is to be deleted
-   * @return a {@link CompletableFuture} that, when completed, indicates that the
-   *         operation has finished
+   * @return a {@link CompletableFuture} that, when completed, indicates that the operation has
+   *     finished
    */
   CompletableFuture<Void> delete(String key);
 

@@ -1,25 +1,22 @@
 package io.seriput.server.serialization.response;
 
-import io.seriput.common.ByteBufferAllocator;
-import io.seriput.common.serialization.response.ResponseValueType;
-import io.seriput.server.core.Value;
-
-import java.nio.ByteBuffer;
-
 import static io.seriput.common.serialization.response.ResponseStatus.*;
 import static io.seriput.common.serialization.response.ResponseValueType.VOID;
 
-/**
- * Response serializer for the Seriput protocol v1.
- */
+import io.seriput.common.ByteBufferAllocator;
+import io.seriput.common.serialization.response.ResponseValueType;
+import io.seriput.server.core.Value;
+import java.nio.ByteBuffer;
+
+/** Response serializer for the Seriput protocol v1. */
 public final class ResponseSerializer {
   private static final int VALUE_OFFSET = 1 + 1 + 4; // status + valueType + valueLength
   private static final byte[] voidOkResponse =
-    new byte[] { OK.status(), VOID.typeId(), 0x00, 0x00, 0x00, 0x00 /* valueLength */ };
+      new byte[] {OK.status(), VOID.typeId(), 0x00, 0x00, 0x00, 0x00 /* valueLength */};
   private static final byte[] notExistResponse =
-    new byte[] { NOT_FOUND.status(), VOID.typeId(), 0x00, 0x00, 0x00, 0x00 /* valueLength */ };
+      new byte[] {NOT_FOUND.status(), VOID.typeId(), 0x00, 0x00, 0x00, 0x00 /* valueLength */};
   private static final byte[] voidInternalErrorResponse =
-    new byte[] { INTERNAL_ERROR.status(), VOID.typeId(), 0x00, 0x00, 0x00, 0x00 /* valueLength */ };
+      new byte[] {INTERNAL_ERROR.status(), VOID.typeId(), 0x00, 0x00, 0x00, 0x00 /* valueLength */};
   public static int HEADER_SIZE = VALUE_OFFSET;
   public static int VALUE_LENGTH_OFFSET = 2;
 

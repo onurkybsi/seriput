@@ -1,23 +1,22 @@
 package io.seriput.server;
 
+import static io.seriput.server.fixture.RequestFixtures.*;
+import static io.seriput.server.fixture.ResponseFixtures.deserialize;
+import static java.util.Collections.emptyList;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.google.common.primitives.Bytes;
+import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.common.ObjectMapperProvider;
 import io.seriput.common.serialization.response.Response;
 import io.seriput.common.serialization.response.ResponseStatus;
 import io.seriput.server.fixture.PartialWritePipeByteChannel;
 import io.seriput.server.fixture.PipeByteChannel;
-import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.server.serialization.response.ResponseSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentCaptor;
-import tools.jackson.databind.node.ObjectNode;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -29,19 +28,21 @@ import java.nio.channels.Selector;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.seriput.server.fixture.RequestFixtures.*;
-import static io.seriput.server.fixture.ResponseFixtures.deserialize;
-import static java.util.Collections.emptyList;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.awaitility.Awaitility.await;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import tools.jackson.databind.node.ObjectNode;
 
 final class SeriputConnectionTest {
-  private static final ResponseSerializer responseSerializer = new ResponseSerializer(new HeapByteBufferAllocator());
+  private static final ResponseSerializer responseSerializer =
+      new ResponseSerializer(new HeapByteBufferAllocator());
   private static final SeriputClient client;
+
   static {
     try {
       client = new SeriputClient(InetAddress.getByName("localhost"), 6070);
@@ -69,7 +70,8 @@ final class SeriputConnectionTest {
   final class Read {
     @ParameterizedTest
     @ValueSource(ints = {0, 5, 7})
-    void should_Read_From_Connection_Open(int numOfBytesToReadAtFirst /* Partial reads */) throws IOException {
+    void should_Read_From_Connection_Open(int numOfBytesToReadAtFirst /* Partial reads */)
+        throws IOException {
       // given
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
@@ -78,7 +80,8 @@ final class SeriputConnectionTest {
       byte[] requestPart1 = new byte[numOfBytesToReadAtFirst];
       byte[] requestPart2 = new byte[testPutRequestPayload.length - numOfBytesToReadAtFirst];
       System.arraycopy(testPutRequestPayload, 0, requestPart1, 0, requestPart1.length);
-      System.arraycopy(testPutRequestPayload, requestPart1.length, requestPart2, 0, requestPart2.length);
+      System.arraycopy(
+          testPutRequestPayload, requestPart1.length, requestPart2, 0, requestPart2.length);
 
       // when
       connection.write(ByteBuffer.wrap(requestPart1));
@@ -87,11 +90,14 @@ final class SeriputConnectionTest {
       underTest.read();
 
       // then
-      await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> {
-        var requestCaptor = ArgumentCaptor.forClass(byte[].class);
-        verify(requestHandler, times(1)).handle(requestCaptor.capture());
-        assertThat(requestCaptor.getValue()).isEqualTo(testPutRequestPayload);
-      });
+      await()
+          .atMost(Duration.ofSeconds(1))
+          .untilAsserted(
+              () -> {
+                var requestCaptor = ArgumentCaptor.forClass(byte[].class);
+                verify(requestHandler, times(1)).handle(requestCaptor.capture());
+                assertThat(requestCaptor.getValue()).isEqualTo(testPutRequestPayload);
+              });
     }
 
     @Test
@@ -131,8 +137,12 @@ final class SeriputConnectionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = SeriputConnection.State.class, mode = EnumSource.Mode.EXCLUDE, names = { "OPEN" })
-    void should_Throw_IllegalStateException_When_ConnectionState_Is_Other_Than_OPEN(SeriputConnection.State state) {
+    @EnumSource(
+        value = SeriputConnection.State.class,
+        mode = EnumSource.Mode.EXCLUDE,
+        names = {"OPEN"})
+    void should_Throw_IllegalStateException_When_ConnectionState_Is_Other_Than_OPEN(
+        SeriputConnection.State state) {
       // given
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
@@ -141,8 +151,8 @@ final class SeriputConnectionTest {
 
       // when & then
       assertThatThrownBy(underTest::read)
-        .isInstanceOfAny(IllegalStateException.class)
-        .hasMessage("Unexpected connection state: " + state);
+          .isInstanceOfAny(IllegalStateException.class)
+          .hasMessage("Unexpected connection state: " + state);
     }
   }
 
@@ -152,23 +162,37 @@ final class SeriputConnectionTest {
     @SuppressWarnings("unchecked")
     void should_Write_To_Connection_Open() throws IOException {
       // given
-      var underTest = new SeriputConnection(client, 0, connection, new RequestHandlerImpl(responseSerializer, emptyList()), selector);
+      var underTest =
+          new SeriputConnection(
+              client,
+              0,
+              connection,
+              new RequestHandlerImpl(responseSerializer, emptyList()),
+              selector);
 
-      var requests = ByteBuffer.wrap(
-        Bytes.concat(testPutRequestPayload, testGetRequestPayload, testDeleteRequestPayload, testGetRequestPayload));
+      var requests =
+          ByteBuffer.wrap(
+              Bytes.concat(
+                  testPutRequestPayload,
+                  testGetRequestPayload,
+                  testDeleteRequestPayload,
+                  testGetRequestPayload));
       connection.write(requests); // Client sends the requests
       underTest.read(); // Server reads the requests
 
       // when
-      await().until(() -> {
-        underTest.write();
-        return !underTest.isReadyToWrite(); // Writing is finished
-      });
+      await()
+          .until(
+              () -> {
+                underTest.write();
+                return !underTest.isReadyToWrite(); // Writing is finished
+              });
 
       // then
       var responsePayloads = ByteBuffer.wrap(new byte[1024]);
       connection.read(responsePayloads);
-      var responses = deserialize(new ByteArrayInputStream(responsePayloads.array()), 4, ObjectNode.class);
+      var responses =
+          deserialize(new ByteArrayInputStream(responsePayloads.array()), 4, ObjectNode.class);
       // verify PUT response
       var putResponse = (Response<ObjectNode>) responses[0];
       assertThat(putResponse.status()).isEqualTo(ResponseStatus.OK);
@@ -176,7 +200,8 @@ final class SeriputConnectionTest {
       // verify GET response
       var getResponse = (Response<ObjectNode>) responses[1];
       assertThat(getResponse.status()).isEqualTo(ResponseStatus.OK);
-      var expectedValue = ObjectMapperProvider.getInstance().convertValue(testValue, ObjectNode.class);
+      var expectedValue =
+          ObjectMapperProvider.getInstance().convertValue(testValue, ObjectNode.class);
       assertThat(getResponse.value()).isEqualTo(expectedValue);
       // verify DELETE response
       var deleteResponse = (Response<ObjectNode>) responses[2];
@@ -194,7 +219,8 @@ final class SeriputConnectionTest {
       // given
       var connection = new PartialWritePipeByteChannel(3);
       var requestHandler = mock(RequestHandler.class);
-      when(requestHandler.handle(any())).thenReturn(responseSerializer.notFound(), responseSerializer.notFound());
+      when(requestHandler.handle(any()))
+          .thenReturn(responseSerializer.notFound(), responseSerializer.notFound());
       var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
 
       var requests = ByteBuffer.wrap(Bytes.concat(testGetRequestPayload, testDeleteRequestPayload));
@@ -204,15 +230,19 @@ final class SeriputConnectionTest {
       underTest.read(); // Server reads the full requests
 
       // when
-      await().atMost(Duration.ofSeconds(1)).until(() -> {
-        underTest.write();
-        return !underTest.isReadyToWrite(); //
-      });
+      await()
+          .atMost(Duration.ofSeconds(1))
+          .until(
+              () -> {
+                underTest.write();
+                return !underTest.isReadyToWrite(); //
+              });
 
       // then
       var responsePayloads = ByteBuffer.wrap(new byte[1024]);
       connection.read(responsePayloads);
-      var responses = deserialize(new ByteArrayInputStream(responsePayloads.array()), 2, ObjectNode.class);
+      var responses =
+          deserialize(new ByteArrayInputStream(responsePayloads.array()), 2, ObjectNode.class);
       // verify GET response
       var getResponse = (Response<ObjectNode>) responses[0];
       assertThat(getResponse.status()).isEqualTo(ResponseStatus.NOT_FOUND);
@@ -235,19 +265,29 @@ final class SeriputConnectionTest {
       underTest.read(); // Server reads the full requests
       connection.close(); // Client closes the connection
 
-      await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> { // connection.write(response) won't happen until request is handled
-        // when
-        underTest.write();
+      await()
+          .atMost(Duration.ofSeconds(1))
+          .untilAsserted(
+              () -> { // connection.write(response) won't happen until request is handled
+                // when
+                underTest.write();
 
-        // then
-        assertThat(underTest.state()).isEqualTo(SeriputConnection.State.CLOSING);
-      });
+                // then
+                assertThat(underTest.state()).isEqualTo(SeriputConnection.State.CLOSING);
+              });
     }
 
     @Test
-    void should_Disables_WriteInterest_When_NothingAvailable_To_Write() throws NoSuchFieldException, IllegalAccessException {
+    void should_Disables_WriteInterest_When_NothingAvailable_To_Write()
+        throws NoSuchFieldException, IllegalAccessException {
       // given
-      var underTest = new SeriputConnection(client, 0, connection, new RequestHandlerImpl(responseSerializer, emptyList()), selector);
+      var underTest =
+          new SeriputConnection(
+              client,
+              0,
+              connection,
+              new RequestHandlerImpl(responseSerializer, emptyList()),
+              selector);
       Field isReadToWriteField = SeriputConnection.class.getDeclaredField("isReadyToWrite");
       isReadToWriteField.setAccessible(true);
       AtomicBoolean isReadyToWrite = (AtomicBoolean) isReadToWriteField.get(underTest);
@@ -261,8 +301,12 @@ final class SeriputConnectionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = SeriputConnection.State.class, mode = EnumSource.Mode.EXCLUDE, names = { "OPEN" })
-    void should_Throw_IllegalStateException_When_ConnectionState_Is_Other_Than_OPEN(SeriputConnection.State state) {
+    @EnumSource(
+        value = SeriputConnection.State.class,
+        mode = EnumSource.Mode.EXCLUDE,
+        names = {"OPEN"})
+    void should_Throw_IllegalStateException_When_ConnectionState_Is_Other_Than_OPEN(
+        SeriputConnection.State state) {
       // given
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
@@ -271,8 +315,8 @@ final class SeriputConnectionTest {
 
       // when & then
       assertThatThrownBy(underTest::write)
-        .isInstanceOfAny(IllegalStateException.class)
-        .hasMessage("Unexpected connection state: " + state);
+          .isInstanceOfAny(IllegalStateException.class)
+          .hasMessage("Unexpected connection state: " + state);
     }
   }
 
@@ -281,35 +325,42 @@ final class SeriputConnectionTest {
   void should_Not_Exit_When_RequestHandler_Throws_Exception() throws IOException {
     // given
     var requestHandler = mock(RequestHandler.class);
-    when(requestHandler.handle(any())).thenAnswer(invocation -> {
-      var request = invocation.getArgument(0, byte[].class);
-      if (Arrays.equals(request, testPutRequestPayload)) {
-        Thread.sleep(250);
-        throw new RuntimeException("Something went wrong!");
-      } else {
-        return responseSerializer.notFound();
-      }
-    });
+    when(requestHandler.handle(any()))
+        .thenAnswer(
+            invocation -> {
+              var request = invocation.getArgument(0, byte[].class);
+              if (Arrays.equals(request, testPutRequestPayload)) {
+                Thread.sleep(250);
+                throw new RuntimeException("Something went wrong!");
+              } else {
+                return responseSerializer.notFound();
+              }
+            });
     var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
     // Client writes the full requests
     connection.write(ByteBuffer.wrap(Bytes.concat(testPutRequestPayload, testGetRequestPayload)));
 
-    await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> { // Await for RequestHandler
-      // when
-      underTest.read(); // Server reads the full requests and dispatches
-      underTest.write();
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .untilAsserted(
+            () -> { // Await for RequestHandler
+              // when
+              underTest.read(); // Server reads the full requests and dispatches
+              underTest.write();
 
-      // then
-      var requestCaptor = ArgumentCaptor.forClass(byte[].class);
-      verify(requestHandler, times(2)).handle(requestCaptor.capture());
-      assertThat(requestCaptor.getAllValues().getFirst()).isEqualTo(testPutRequestPayload);
-      assertThat(requestCaptor.getAllValues().getLast()).isEqualTo(testGetRequestPayload);
-      ByteBuffer responsePayloads = ByteBuffer.wrap(new byte[testGetRequestPayload.length]);
-      connection.read(responsePayloads);
-      var responses = deserialize(new ByteArrayInputStream(responsePayloads.array()), 1, ObjectNode.class);
-      var getResponse = (Response<ObjectNode>) responses[0];
-      assertThat(getResponse.status()).isEqualTo(ResponseStatus.NOT_FOUND);
-      assertThat(getResponse.value()).isNull();
-    });
+              // then
+              var requestCaptor = ArgumentCaptor.forClass(byte[].class);
+              verify(requestHandler, times(2)).handle(requestCaptor.capture());
+              assertThat(requestCaptor.getAllValues().getFirst()).isEqualTo(testPutRequestPayload);
+              assertThat(requestCaptor.getAllValues().getLast()).isEqualTo(testGetRequestPayload);
+              ByteBuffer responsePayloads = ByteBuffer.wrap(new byte[testGetRequestPayload.length]);
+              connection.read(responsePayloads);
+              var responses =
+                  deserialize(
+                      new ByteArrayInputStream(responsePayloads.array()), 1, ObjectNode.class);
+              var getResponse = (Response<ObjectNode>) responses[0];
+              assertThat(getResponse.status()).isEqualTo(ResponseStatus.NOT_FOUND);
+              assertThat(getResponse.value()).isNull();
+            });
   }
 }
