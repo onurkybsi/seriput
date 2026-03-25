@@ -1,6 +1,6 @@
 package io.seriput.server;
 
-import io.seriput.common.HeapByteBufferAllocator;
+import io.seriput.common.PooledByteBufferAllocator;
 import io.seriput.server.serialization.response.ResponseSerializer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,7 +34,7 @@ public final class SeriputServer implements AutoCloseable {
     this.port = port;
     this.requestHandler =
         new RequestHandlerImpl(
-            new ResponseSerializer(new HeapByteBufferAllocator()), Collections.emptyList());
+            new ResponseSerializer(new PooledByteBufferAllocator()), Collections.emptyList());
     this.selector = Selector.open();
   }
 
