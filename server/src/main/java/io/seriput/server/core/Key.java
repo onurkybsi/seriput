@@ -19,6 +19,6 @@ public record Key(KeyType type, byte[] bytes) {
 
   @Override
   public int hashCode() {
-    return Objects.hash(type, Arrays.hashCode(bytes));
+    return 31 * type.hashCode() + Arrays.hashCode(bytes);
   }
 }
