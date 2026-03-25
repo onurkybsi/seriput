@@ -3,6 +3,9 @@ package io.seriput.server;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import io.seriput.common.HeapByteBufferAllocator;
+import io.seriput.server.serialization.response.ResponseSerializer;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
@@ -32,7 +35,7 @@ public final class SeriputServer implements AutoCloseable {
   public SeriputServer(int port) throws IOException {
     this.channel = ServerSocketChannel.open();
     this.port = port;
-    this.requestHandler = new RequestHandlerImpl(Collections.emptyList());
+    this.requestHandler = new RequestHandlerImpl(new ResponseSerializer(new HeapByteBufferAllocator()), Collections.emptyList());
     this.selector = Selector.open();
   }
 

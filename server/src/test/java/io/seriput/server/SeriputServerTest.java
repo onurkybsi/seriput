@@ -29,6 +29,7 @@ import static org.mockito.Mockito.*;
 final class SeriputServerTest {
   private static final int SERVER_PORT = 8080;
   private static final RequestSerializer<String, ObjectNode> serializer = RequestSerializer.build(KeyType.UTF8, ValueType.JSON_UTF8, new HeapByteBufferAllocator());
+  private static final ResponseSerializer responseSerializer = new ResponseSerializer(new HeapByteBufferAllocator());
 
   private RequestHandler requestHandler;
 
@@ -37,7 +38,7 @@ final class SeriputServerTest {
   @BeforeEach
   void setUp() throws Exception {
     this.requestHandler = mock(RequestHandler.class);
-    when(requestHandler.handle(any())).thenReturn(ResponseSerializer.ok());
+    when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
     this.underTest = new SeriputServer(SERVER_PORT, requestHandler);
   }
 
@@ -165,7 +166,7 @@ final class SeriputServerTest {
       // given
       underTest.start();
       var client = SeriputClient.of("localhost", SERVER_PORT);
-      when(requestHandler.handle(any())).thenReturn(ResponseSerializer.notFound());
+      when(requestHandler.handle(any())).thenReturn(responseSerializer.notFound());
 
       // when
       await().until(client::tryToConnect);
@@ -186,7 +187,7 @@ final class SeriputServerTest {
       // given
       underTest.start();
       var client = SeriputClient.of("localhost", SERVER_PORT);
-      when(requestHandler.handle(any())).thenReturn(ResponseSerializer.notFound());
+      when(requestHandler.handle(any())).thenReturn(responseSerializer.notFound());
 
       // when
       await().until(client::tryToConnect);
@@ -199,7 +200,7 @@ final class SeriputServerTest {
       await()
         .atMost(Duration.ofSeconds(1))
         .until(() -> {
-          var expectedBuffer = ResponseSerializer.notFound();
+          var expectedBuffer = responseSerializer.notFound();
           byte[] expectedBytes = new byte[expectedBuffer.limit()];
           if (client.available() < expectedBytes.length) {
             return false;

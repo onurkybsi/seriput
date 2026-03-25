@@ -1,8 +1,10 @@
 package io.seriput.server;
 
+import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.common.ObjectMapperProvider;
 import io.seriput.common.serialization.response.Response;
 import io.seriput.common.serialization.response.ResponseStatus;
+import io.seriput.server.serialization.response.ResponseSerializer;
 import io.seriput.server.fixture.RequestFixtures;
 import io.seriput.server.fixture.SeriputClient;
 import org.junit.jupiter.api.AfterEach;
@@ -31,7 +33,7 @@ final class SeriputServerIntegrationTest {
 
   @BeforeEach
   void setUp() throws Exception {
-    this.underTest = new SeriputServer(SERVER_PORT,  new RequestHandlerImpl(Collections.emptyList()));
+    this.underTest = new SeriputServer(SERVER_PORT, new RequestHandlerImpl(new ResponseSerializer(new HeapByteBufferAllocator()), Collections.emptyList()));
     this.underTest.start();
   }
 

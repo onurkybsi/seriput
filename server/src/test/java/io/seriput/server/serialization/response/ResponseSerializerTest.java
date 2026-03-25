@@ -2,6 +2,7 @@ package io.seriput.server.serialization.response;
 
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
+import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.common.serialization.response.ResponseStatus;
 import io.seriput.common.serialization.response.ResponseValueType;
 import io.seriput.server.core.Value;
@@ -12,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 final class ResponseSerializerTest {
+  private final ResponseSerializer underTest = new ResponseSerializer(new HeapByteBufferAllocator());
+
   @Nested
   class OkResponse {
     @Test
@@ -20,7 +23,7 @@ final class ResponseSerializerTest {
       Value value = new Value(ValueType.JSON_UTF8, "{\"key\":\"value\"}".getBytes());
 
       // when
-      var actual = ResponseSerializer.ok(value);
+      var actual = underTest.ok(value);
 
       // then
       var expected = Bytes.concat(
@@ -39,7 +42,7 @@ final class ResponseSerializerTest {
       // given
 
       // when
-      var actual = ResponseSerializer.ok();
+      var actual = underTest.ok();
 
       // then
       var expected = Bytes.concat(
@@ -60,7 +63,7 @@ final class ResponseSerializerTest {
       // given
 
       // when
-      var actual = ResponseSerializer.notFound();
+      var actual = underTest.notFound();
 
       // then
       var expected = Bytes.concat(
@@ -81,7 +84,7 @@ final class ResponseSerializerTest {
       // given
 
       // when
-      var actual = ResponseSerializer.internalError();
+      var actual = underTest.internalError();
 
       // then
       var expected = Bytes.concat(

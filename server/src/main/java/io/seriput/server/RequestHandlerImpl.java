@@ -14,8 +14,10 @@ import java.util.List;
 final class RequestHandlerImpl implements RequestHandler {
   private final Cache cache = new Cache();
   private final ArrayList<RequestInterceptor> interceptors = new ArrayList<>();
+  private final ResponseSerializer responseSerializer;
 
-  RequestHandlerImpl(List<RequestInterceptor> interceptors) {
+  RequestHandlerImpl(ResponseSerializer responseSerializer, List<RequestInterceptor> interceptors) {
+    this.responseSerializer = responseSerializer;
     this.interceptors.addAll(interceptors);
   }
 
@@ -35,23 +37,23 @@ final class RequestHandlerImpl implements RequestHandler {
   private ByteBuffer get(GetRequest request) {
     var value = cache.get(request.key());
     if (value == null) {
-      return ResponseSerializer.notFound();
+      return responseSerializer.notFound();
     } else {
-      return ResponseSerializer.ok(value);
+      return responseSerializer.ok(value);
     }
   }
 
   private ByteBuffer put(PutRequest request) {
     cache.put(request.key(), request.value());
-    return ResponseSerializer.ok();
+    return responseSerializer.ok();
   }
 
   private ByteBuffer delete(DeleteRequest request) {
     var value = cache.delete(request.key());
     if (value == null) {
-      return ResponseSerializer.notFound();
+      return responseSerializer.notFound();
     } else {
-      return ResponseSerializer.ok();
+      return responseSerializer.ok();
     }
   }
 }

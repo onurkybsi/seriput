@@ -6,6 +6,7 @@ import io.seriput.common.serialization.response.Response;
 import io.seriput.common.serialization.response.ResponseStatus;
 import io.seriput.server.fixture.PartialWritePipeByteChannel;
 import io.seriput.server.fixture.PipeByteChannel;
+import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.server.serialization.response.ResponseSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 final class SeriputConnectionTest {
+  private static final ResponseSerializer responseSerializer = new ResponseSerializer(new HeapByteBufferAllocator());
   private static final SeriputClient client;
   static {
     try {
@@ -70,7 +72,7 @@ final class SeriputConnectionTest {
     void should_Read_From_Connection_Open(int numOfBytesToReadAtFirst /* Partial reads */) throws IOException {
       // given
       var requestHandler = mock(RequestHandler.class);
-      when(requestHandler.handle(any())).thenReturn(ResponseSerializer.ok());
+      when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
       var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
 
       byte[] requestPart1 = new byte[numOfBytesToReadAtFirst];
@@ -96,7 +98,7 @@ final class SeriputConnectionTest {
     void should_Not_Do_Anything_When_No_DataAvailable_To_Read() throws IOException {
       // given
       var requestHandler = mock(RequestHandler.class);
-      when(requestHandler.handle(any())).thenReturn(ResponseSerializer.ok());
+      when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
       var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
       connection.write(ByteBuffer.wrap(testPutRequestPayload));
 
@@ -117,7 +119,7 @@ final class SeriputConnectionTest {
     void should_Set_State_As_CLOSING_When_Client_Closes_The_Connection() throws IOException {
       // given
       var requestHandler = mock(RequestHandler.class);
-      when(requestHandler.handle(any())).thenReturn(ResponseSerializer.ok());
+      when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
       var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
       connection.close();
 
@@ -133,7 +135,7 @@ final class SeriputConnectionTest {
     void should_Throw_IllegalStateException_When_ConnectionState_Is_Other_Than_OPEN(SeriputConnection.State state) {
       // given
       var requestHandler = mock(RequestHandler.class);
-      when(requestHandler.handle(any())).thenReturn(ResponseSerializer.ok());
+      when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
       var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
       underTest.state(state);
 
@@ -150,7 +152,7 @@ final class SeriputConnectionTest {
     @SuppressWarnings("unchecked")
     void should_Write_To_Connection_Open() throws IOException {
       // given
-      var underTest = new SeriputConnection(client, 0, connection, new RequestHandlerImpl(emptyList()), selector);
+      var underTest = new SeriputConnection(client, 0, connection, new RequestHandlerImpl(responseSerializer, emptyList()), selector);
 
       var requests = ByteBuffer.wrap(
         Bytes.concat(testPutRequestPayload, testGetRequestPayload, testDeleteRequestPayload, testGetRequestPayload));
@@ -192,7 +194,7 @@ final class SeriputConnectionTest {
       // given
       var connection = new PartialWritePipeByteChannel(3);
       var requestHandler = mock(RequestHandler.class);
-      when(requestHandler.handle(any())).thenReturn(ResponseSerializer.notFound(), ResponseSerializer.notFound());
+      when(requestHandler.handle(any())).thenReturn(responseSerializer.notFound(), responseSerializer.notFound());
       var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
 
       var requests = ByteBuffer.wrap(Bytes.concat(testGetRequestPayload, testDeleteRequestPayload));
@@ -225,7 +227,7 @@ final class SeriputConnectionTest {
     void should_Set_State_As_CLOSING_When_Client_Closes_The_Connection() throws IOException {
       // given
       var requestHandler = mock(RequestHandler.class);
-      when(requestHandler.handle(any())).thenReturn(ResponseSerializer.notFound());
+      when(requestHandler.handle(any())).thenReturn(responseSerializer.notFound());
       var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
 
       var requests = ByteBuffer.wrap(Bytes.concat(testGetRequestPayload, testDeleteRequestPayload));
@@ -245,7 +247,7 @@ final class SeriputConnectionTest {
     @Test
     void should_Disables_WriteInterest_When_NothingAvailable_To_Write() throws NoSuchFieldException, IllegalAccessException {
       // given
-      var underTest = new SeriputConnection(client, 0, connection, new RequestHandlerImpl(emptyList()), selector);
+      var underTest = new SeriputConnection(client, 0, connection, new RequestHandlerImpl(responseSerializer, emptyList()), selector);
       Field isReadToWriteField = SeriputConnection.class.getDeclaredField("isReadyToWrite");
       isReadToWriteField.setAccessible(true);
       AtomicBoolean isReadyToWrite = (AtomicBoolean) isReadToWriteField.get(underTest);
@@ -263,7 +265,7 @@ final class SeriputConnectionTest {
     void should_Throw_IllegalStateException_When_ConnectionState_Is_Other_Than_OPEN(SeriputConnection.State state) {
       // given
       var requestHandler = mock(RequestHandler.class);
-      when(requestHandler.handle(any())).thenReturn(ResponseSerializer.ok());
+      when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
       var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
       underTest.state(state);
 
@@ -285,7 +287,7 @@ final class SeriputConnectionTest {
         Thread.sleep(250);
         throw new RuntimeException("Something went wrong!");
       } else {
-        return ResponseSerializer.notFound();
+        return responseSerializer.notFound();
       }
     });
     var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);

@@ -1,5 +1,6 @@
 package io.seriput.server;
 
+import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.common.ObjectMapperProvider;
 import io.seriput.server.core.Value;
 import io.seriput.server.core.ValueType;
@@ -13,7 +14,8 @@ import java.util.Collections;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 final class RequestHandlerImplTest {
-  private static final RequestHandler underTest = new RequestHandlerImpl(Collections.emptyList());
+  private static final ResponseSerializer responseSerializer = new ResponseSerializer(new HeapByteBufferAllocator());
+  private static final RequestHandler underTest = new RequestHandlerImpl(responseSerializer, Collections.emptyList());
 
   @Nested
   class Get {
@@ -33,7 +35,7 @@ final class RequestHandlerImplTest {
 
       // then
       var expectedValue = new Value(ValueType.JSON_UTF8, ObjectMapperProvider.getInstance().writeValueAsBytes(value));
-      var expected = ResponseSerializer.ok(expectedValue);
+      var expected = responseSerializer.ok(expectedValue);
       assertThat(actual.array()).isEqualTo(expected.array());
     }
 
@@ -47,7 +49,7 @@ final class RequestHandlerImplTest {
       var actual = underTest.handle(requestPayload);
 
       // then
-      var expected = ResponseSerializer.notFound();
+      var expected = responseSerializer.notFound();
       assertThat(actual.array()).isEqualTo(expected.array());
     }
   }
@@ -68,11 +70,11 @@ final class RequestHandlerImplTest {
       var actual = underTest.handle(requestPayload);
 
       // then
-      var expected = ResponseSerializer.ok();
+      var expected = responseSerializer.ok();
       assertThat(actual.array()).isEqualTo(expected.array());
       var stored = underTest.handle(RequestFixtures.serializeGet(key));
       var expectedStoredValue = new Value(ValueType.JSON_UTF8, ObjectMapperProvider.getInstance().writeValueAsBytes(value));
-      assertThat(stored.array()).isEqualTo(ResponseSerializer.ok(expectedStoredValue).array());
+      assertThat(stored.array()).isEqualTo(responseSerializer.ok(expectedStoredValue).array());
     }
   }
 
@@ -93,10 +95,10 @@ final class RequestHandlerImplTest {
       var actual = underTest.handle(requestPayload);
 
       // then
-      var expected = ResponseSerializer.ok();
+      var expected = responseSerializer.ok();
       assertThat(actual.array()).isEqualTo(expected.array());
       var deleted = underTest.handle(RequestFixtures.serializeGet(key));
-      var expectedDeleted = ResponseSerializer.notFound();
+      var expectedDeleted = responseSerializer.notFound();
       assertThat(deleted.array()).isEqualTo(expectedDeleted.array());
     }
 
@@ -110,7 +112,7 @@ final class RequestHandlerImplTest {
       var actual = underTest.handle(requestPayload);
 
       // then
-      var expected = ResponseSerializer.notFound();
+      var expected = responseSerializer.notFound();
       assertThat(actual.array()).isEqualTo(expected.array());
     }
   }
