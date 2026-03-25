@@ -35,8 +35,7 @@ public final class SeriputServer implements AutoCloseable {
     this.channel = ServerSocketChannel.open();
     this.port = port;
     this.requestHandler =
-        new RequestHandlerImpl(
-            new ResponseSerializer(this.allocator), Collections.emptyList());
+        new RequestHandlerImpl(new ResponseSerializer(this.allocator), Collections.emptyList());
     this.selector = Selector.open();
   }
 
@@ -164,7 +163,12 @@ public final class SeriputServer implements AutoCloseable {
     var clientConnections = this.connections.getOrDefault(client, new HashSet<>());
     var seriputConnection =
         new SeriputConnection(
-            this.allocator, client, clientConnections.size(), connection, requestHandler, this.selector);
+            this.allocator,
+            client,
+            clientConnections.size(),
+            connection,
+            requestHandler,
+            this.selector);
     clientConnections.add(seriputConnection);
     connection.configureBlocking(false);
     connection.register(this.selector, SelectionKey.OP_READ, seriputConnection);

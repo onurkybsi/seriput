@@ -21,7 +21,9 @@ import org.apache.logging.log4j.Logger;
 /**
  * Manages a single Seriput connection lifecycle.
  *
- * <p>Note that this class is NOT thread-safe, and it is designed to be used within the event loop.
+ * <p>
+ * Note that this class is NOT thread-safe, and it is designed to be used within
+ * the event loop.
  */
 final class SeriputConnection {
   private static final Logger logger = LogManager.getLogger(SeriputConnection.class.getName());
@@ -31,6 +33,7 @@ final class SeriputConnection {
   private final SeriputClient client;
   private final int clientConnectionIx;
   private final ByteChannel connection;
+  private final Queue<byte[]> frameBufferPool = new ConcurrentLinkedQueue<>();
   private final BlockingQueue<byte[]> inboundQueue = new LinkedBlockingQueue<>();
   private final AtomicBoolean isReadyToWrite = new AtomicBoolean(false);
   private final Queue<ByteBuffer> outboundQueue = new ConcurrentLinkedQueue<>();
@@ -40,7 +43,6 @@ final class SeriputConnection {
   private final Selector selector;
   private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
   private final Thread workerThread;
-
   // endregion
 
   SeriputConnection(
@@ -87,7 +89,8 @@ final class SeriputConnection {
     if (this.state.get() != State.OPEN) {
       throw new IllegalStateException("Unexpected connection state: " + this.state.get());
     }
-    if (!doRead()) return;
+    if (!doRead())
+      return;
     maybeDispatch();
     // TODO: Add readBuffer capacity check!
   }
@@ -168,8 +171,8 @@ final class SeriputConnection {
       ByteBuffer view = this.readBuffer.duplicate(); // This isn't full copy!
       view.position(frameStart);
       view.limit(frameEnd);
-      byte[] frame = new byte[frameSize];
-      view.get(frame);
+      byte[] frame = acquireFrameBuffer(frameSize);
+      view.get(frame, 0, frameSize);
       this.inboundQueue.add(frame); // Full request
 
       // Set to the next frame's start.
@@ -188,6 +191,7 @@ final class SeriputConnection {
                 try {
                   byte[] request = this.inboundQueue.take();
                   ByteBuffer response = this.requestHandler.handle(request);
+                  this.releaseFrameBuffer(request);
                   this.outboundQueue.add(response);
                   if (this.isReadyToWrite.compareAndSet(
                       false, true)) { // In order to prevent unnecessary selector.wakeup() calls
@@ -205,6 +209,18 @@ final class SeriputConnection {
                   "Worker thread is exiting, size of the inbound queue: {}",
                   this.inboundQueue.size());
             });
+  }
+
+  private byte[] acquireFrameBuffer(int frameSize) {
+    byte[] buffer = this.frameBufferPool.poll();
+    if (buffer != null && buffer.length >= frameSize) {
+      return buffer;
+    }
+    return new byte[frameSize];
+  }
+
+  private void releaseFrameBuffer(byte[] buffer) {
+    this.frameBufferPool.add(buffer);
   }
 
   private static String workerThreadName(SeriputClient client, int clientConnectionIx) {
