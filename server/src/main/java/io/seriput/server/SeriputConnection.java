@@ -3,6 +3,7 @@ package io.seriput.server;
 import static io.seriput.server.serialization.request.RequestDeserializer.bodySize;
 import static io.seriput.server.serialization.request.RequestDeserializer.headerSize;
 
+import io.seriput.common.PooledByteBufferAllocator;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
@@ -26,6 +27,7 @@ final class SeriputConnection {
   private static final Logger logger = LogManager.getLogger(SeriputConnection.class.getName());
 
   // region Fields
+  private final PooledByteBufferAllocator allocator;
   private final SeriputClient client;
   private final int clientConnectionIx;
   private final ByteChannel connection;
@@ -42,11 +44,13 @@ final class SeriputConnection {
   // endregion
 
   SeriputConnection(
+      PooledByteBufferAllocator allocator,
       SeriputClient client,
       int clientConnectionIx,
       ByteChannel connection,
       RequestHandler requestHandler,
       Selector selector) {
+    this.allocator = allocator;
     this.client = client;
     this.clientConnectionIx = clientConnectionIx;
     this.connection = connection;
@@ -97,11 +101,12 @@ final class SeriputConnection {
       ByteBuffer response;
       while ((response = this.outboundQueue.peek()) != null) {
         this.connection.write(response);
-        if (response
-            .hasRemaining()) { // OS send buffer is full, stop writing but keep OP_WRITE enabled
+        if (response.hasRemaining()) {
+          // OS send buffer is full, stop writing but keep OP_WRITE enabled
           return;
         }
         this.outboundQueue.remove();
+        this.allocator.release(response);
       }
       // No more buffers left to write, tell the event loop, no interest to write!
       this.isReadyToWrite.compareAndSet(true, false);

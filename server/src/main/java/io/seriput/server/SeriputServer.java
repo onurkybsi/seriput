@@ -19,6 +19,7 @@ public final class SeriputServer implements AutoCloseable {
   private static final Logger logger = LogManager.getLogger(SeriputServer.class);
 
   // region Fields
+  private final PooledByteBufferAllocator allocator;
   private final ServerSocketChannel channel;
   private final HashMap<SeriputClient, Collection<SeriputConnection>> connections = new HashMap<>();
   private final int port;
@@ -30,15 +31,17 @@ public final class SeriputServer implements AutoCloseable {
   // endregion
 
   public SeriputServer(int port) throws IOException {
+    this.allocator = new PooledByteBufferAllocator();
     this.channel = ServerSocketChannel.open();
     this.port = port;
     this.requestHandler =
         new RequestHandlerImpl(
-            new ResponseSerializer(new PooledByteBufferAllocator()), Collections.emptyList());
+            new ResponseSerializer(this.allocator), Collections.emptyList());
     this.selector = Selector.open();
   }
 
   SeriputServer(int port, RequestHandler requestHandler) throws IOException {
+    this.allocator = new PooledByteBufferAllocator();
     this.channel = ServerSocketChannel.open();
     this.port = port;
     this.requestHandler = requestHandler;
@@ -161,7 +164,7 @@ public final class SeriputServer implements AutoCloseable {
     var clientConnections = this.connections.getOrDefault(client, new HashSet<>());
     var seriputConnection =
         new SeriputConnection(
-            client, clientConnections.size(), connection, requestHandler, this.selector);
+            this.allocator, client, clientConnections.size(), connection, requestHandler, this.selector);
     clientConnections.add(seriputConnection);
     connection.configureBlocking(false);
     connection.register(this.selector, SelectionKey.OP_READ, seriputConnection);

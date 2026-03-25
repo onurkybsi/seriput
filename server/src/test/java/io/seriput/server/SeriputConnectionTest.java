@@ -12,6 +12,7 @@ import static org.mockito.Mockito.*;
 import com.google.common.primitives.Bytes;
 import io.seriput.common.HeapByteBufferAllocator;
 import io.seriput.common.ObjectMapperProvider;
+import io.seriput.common.PooledByteBufferAllocator;
 import io.seriput.common.serialization.response.Response;
 import io.seriput.common.serialization.response.ResponseStatus;
 import io.seriput.server.fixture.PartialWritePipeByteChannel;
@@ -39,6 +40,7 @@ import org.mockito.ArgumentCaptor;
 import tools.jackson.databind.node.ObjectNode;
 
 final class SeriputConnectionTest {
+  private static final PooledByteBufferAllocator allocator = new PooledByteBufferAllocator();
   private static final ResponseSerializer responseSerializer =
       new ResponseSerializer(new HeapByteBufferAllocator());
   private static final SeriputClient client;
@@ -75,7 +77,7 @@ final class SeriputConnectionTest {
       // given
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
-      var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
+      var underTest = new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
 
       byte[] requestPart1 = new byte[numOfBytesToReadAtFirst];
       byte[] requestPart2 = new byte[testPutRequestPayload.length - numOfBytesToReadAtFirst];
@@ -105,7 +107,7 @@ final class SeriputConnectionTest {
       // given
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
-      var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
+      var underTest = new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
       connection.write(ByteBuffer.wrap(testPutRequestPayload));
 
       // when
@@ -126,7 +128,7 @@ final class SeriputConnectionTest {
       // given
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
-      var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
+      var underTest = new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
       connection.close();
 
       // when
@@ -146,7 +148,7 @@ final class SeriputConnectionTest {
       // given
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
-      var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
+      var underTest = new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
       underTest.state(state);
 
       // when & then
@@ -164,6 +166,7 @@ final class SeriputConnectionTest {
       // given
       var underTest =
           new SeriputConnection(
+              allocator,
               client,
               0,
               connection,
@@ -221,7 +224,7 @@ final class SeriputConnectionTest {
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any()))
           .thenReturn(responseSerializer.notFound(), responseSerializer.notFound());
-      var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
+      var underTest = new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
 
       var requests = ByteBuffer.wrap(Bytes.concat(testGetRequestPayload, testDeleteRequestPayload));
       while (connection.write(requests) > 0) { // Client writes the full requests
@@ -258,7 +261,7 @@ final class SeriputConnectionTest {
       // given
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.notFound());
-      var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
+      var underTest = new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
 
       var requests = ByteBuffer.wrap(Bytes.concat(testGetRequestPayload, testDeleteRequestPayload));
       connection.write(requests); // Client writes the full requests
@@ -283,6 +286,7 @@ final class SeriputConnectionTest {
       // given
       var underTest =
           new SeriputConnection(
+              allocator,
               client,
               0,
               connection,
@@ -310,7 +314,7 @@ final class SeriputConnectionTest {
       // given
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
-      var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
+      var underTest = new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
       underTest.state(state);
 
       // when & then
@@ -336,7 +340,7 @@ final class SeriputConnectionTest {
                 return responseSerializer.notFound();
               }
             });
-    var underTest = new SeriputConnection(client, 0, connection, requestHandler, selector);
+    var underTest = new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
     // Client writes the full requests
     connection.write(ByteBuffer.wrap(Bytes.concat(testPutRequestPayload, testGetRequestPayload)));
 
