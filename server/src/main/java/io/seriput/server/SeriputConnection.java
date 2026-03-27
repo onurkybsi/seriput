@@ -21,9 +21,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Manages a single Seriput connection lifecycle.
  *
- * <p>
- * Note that this class is NOT thread-safe, and it is designed to be used within
- * the event loop.
+ * <p>Note that this class is NOT thread-safe, and it is designed to be used within the event loop.
  */
 final class SeriputConnection {
   private static final Logger logger = LogManager.getLogger(SeriputConnection.class.getName());
@@ -43,6 +41,7 @@ final class SeriputConnection {
   private final Selector selector;
   private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
   private final Thread workerThread;
+
   // endregion
 
   SeriputConnection(
@@ -89,8 +88,7 @@ final class SeriputConnection {
     if (this.state.get() != State.OPEN) {
       throw new IllegalStateException("Unexpected connection state: " + this.state.get());
     }
-    if (!doRead())
-      return;
+    if (!doRead()) return;
     maybeDispatch();
     // TODO: Add readBuffer capacity check!
   }

@@ -57,8 +57,7 @@ public final class RequestDeserializer {
     KeyType keyType = KeyType.fromByte(buffer[KEY_TYPE_OFFSET]);
     assertOrThrow(keyType != null, "Unknown key type: " + buffer[KEY_TYPE_OFFSET]);
     int keyLength = toIntBigEndian(buffer, KEY_LENGTH_OFFSET);
-    byte[] keyBytes = Arrays.copyOfRange(buffer, HEADER_SIZE, HEADER_SIZE + keyLength);
-    return new GetRequest(new Key(keyType, keyBytes));
+    return new GetRequest(Key.view(keyType, buffer, HEADER_SIZE, keyLength));
   }
 
   private static PutRequest deserializePut(byte[] buffer) {
@@ -78,8 +77,7 @@ public final class RequestDeserializer {
     KeyType keyType = KeyType.fromByte(buffer[KEY_TYPE_OFFSET]);
     assertOrThrow(keyType != null, "Unknown key type: " + buffer[KEY_TYPE_OFFSET]);
     int keyLength = toIntBigEndian(buffer, KEY_LENGTH_OFFSET);
-    byte[] keyBytes = Arrays.copyOfRange(buffer, HEADER_SIZE, HEADER_SIZE + keyLength);
-    return new DeleteRequest(new Key(keyType, keyBytes));
+    return new DeleteRequest(Key.view(keyType, buffer, HEADER_SIZE, keyLength));
   }
 
   private static void assertOrThrow(boolean condition, String message) {
