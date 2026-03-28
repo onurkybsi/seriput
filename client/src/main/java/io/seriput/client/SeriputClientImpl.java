@@ -18,7 +18,6 @@ import lombok.Builder;
 
 final class SeriputClientImpl implements SeriputClient {
   private static final int DEFAULT_POOL_SIZE = 10;
-  private static final int DEFAULT_CALLBACK_EXECUTOR_POOL_SIZE = 4;
   private static final int DEFAULT_READ_BUFFER_SIZE = 8192;
   private static final int DEFAULT_MAX_OUTBOUND_QUEUE_SIZE = 1024;
 
@@ -50,7 +49,7 @@ final class SeriputClientImpl implements SeriputClient {
             poolSize > 0 ? poolSize : DEFAULT_POOL_SIZE,
             callbackExecutor != null
                 ? callbackExecutor
-                : Executors.newFixedThreadPool(DEFAULT_CALLBACK_EXECUTOR_POOL_SIZE),
+                : Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()),
             readBufferSize > 0 ? readBufferSize : DEFAULT_READ_BUFFER_SIZE,
             maxOutboundQueueSize > 0 ? maxOutboundQueueSize : DEFAULT_MAX_OUTBOUND_QUEUE_SIZE);
     this.connectionPool.start();
