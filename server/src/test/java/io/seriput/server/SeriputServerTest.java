@@ -12,7 +12,6 @@ import io.seriput.common.serialization.request.ValueType;
 import io.seriput.server.fixture.SeriputClient;
 import io.seriput.server.serialization.response.ResponseSerializer;
 import java.io.IOException;
-import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
@@ -235,47 +234,31 @@ final class SeriputServerTest {
   @Nested
   class WriteInterestManagement {
     @Test
-    void should_Interest_OP_WRITE_When_Connection_Is_ReadyToWrite() throws IOException {
+    void should_Clear_OP_WRITE_When_Connection_IsNot_WritePending() throws IOException {
       // given
       underTest.start();
-      Pipe pipe = Pipe.open();
-      try (Pipe.SinkChannel channel = pipe.sink()) {
-        channel.configureBlocking(false);
-        SeriputConnection connection = mock(SeriputConnection.class);
-        when(connection.isReadyToWrite()).thenReturn(true);
-        SelectionKey key =
-            channel.register(underTest.selector(), SelectionKey.OP_WRITE, connection);
+      var client = SeriputClient.of("localhost", SERVER_PORT);
+      await().until(client::tryToConnect);
+      var requestBuffer = serializer.serializeGet("user:1");
+      var requestBytes = new byte[requestBuffer.limit()];
+      requestBuffer.get(requestBytes);
+      when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
 
-        // when
-        underTest.selector().wakeup();
+      // when
+      client.write(requestBytes);
+      var expectedResponse = responseSerializer.ok();
+      await()
+          .atMost(Duration.ofSeconds(1))
+          .until(() -> client.available() >= expectedResponse.limit());
 
-        // then
-        await()
-            .untilAsserted(
-                () ->
-                    assertThat(key.interestOps() & SelectionKey.OP_WRITE)
-                        .isEqualTo(SelectionKey.OP_WRITE));
-      }
-    }
-
-    @Test
-    void should_Remove_OP_WRITE_Interest_When_Connection_Is_Not_ReadyToWrite() throws IOException {
-      // given
-      underTest.start();
-      Pipe pipe = Pipe.open();
-      try (Pipe.SinkChannel channel = pipe.sink()) {
-        channel.configureBlocking(false);
-        SeriputConnection connection = mock(SeriputConnection.class);
-        when(connection.isReadyToWrite()).thenReturn(false);
-        SelectionKey key =
-            channel.register(underTest.selector(), SelectionKey.OP_WRITE, connection);
-
-        // when
-        underTest.selector().wakeup();
-
-        // then
-        await().untilAsserted(() -> assertThat(key.interestOps() & SelectionKey.OP_WRITE).isZero());
-      }
+      // then: OP_WRITE is cleared after write() drains the response
+      var connectionKey =
+          underTest.selector().keys().stream()
+              .filter(k -> k.attachment() instanceof SeriputConnection)
+              .findFirst()
+              .orElseThrow();
+      assertThat(connectionKey.interestOps() & SelectionKey.OP_WRITE).isZero();
+      client.close();
     }
   }
 

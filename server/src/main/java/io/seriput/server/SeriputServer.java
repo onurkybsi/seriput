@@ -10,6 +10,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +28,7 @@ public final class SeriputServer implements AutoCloseable {
   private final Selector selector;
   private final Thread serverThread = new Thread(this::startEventLoop, "server");
   private final AtomicReference<State> state = new AtomicReference<>(State.READY);
+  private final Queue<SeriputConnection> writePendingConnections = new ConcurrentLinkedQueue<>();
 
   // endregion
 
@@ -110,8 +112,8 @@ public final class SeriputServer implements AutoCloseable {
     while (State.RUNNING.equals(this.state.get())) {
       try {
         select();
+        drainPendingWriteInterests();
         maybeClose();
-        setWriteInterest();
       } catch (IOException e) {
         logger.error("Exception occurred when selecting keys!", e);
       }
@@ -161,6 +163,8 @@ public final class SeriputServer implements AutoCloseable {
 
     var client = SeriputClient.from(connection);
     var clientConnections = this.connections.getOrDefault(client, new HashSet<>());
+    connection.configureBlocking(false);
+    var connectionKey = connection.register(this.selector, SelectionKey.OP_READ);
     var seriputConnection =
         new SeriputConnection(
             this.allocator,
@@ -168,10 +172,10 @@ public final class SeriputServer implements AutoCloseable {
             clientConnections.size(),
             connection,
             requestHandler,
-            this.selector);
+            connectionKey,
+            this.writePendingConnections);
+    connectionKey.attach(seriputConnection);
     clientConnections.add(seriputConnection);
-    connection.configureBlocking(false);
-    connection.register(this.selector, SelectionKey.OP_READ, seriputConnection);
     this.connections.put(client, clientConnections);
     logger.info("Connection accepted: {}", client);
   }
@@ -201,14 +205,13 @@ public final class SeriputServer implements AutoCloseable {
     }
   }
 
-  private void setWriteInterest() {
-    for (SelectionKey key : selector.keys()) {
-      if (!key.isValid()) continue;
-      if (!(key.attachment() instanceof SeriputConnection connection)) continue;
-      if (connection.isReadyToWrite()) {
+  private void drainPendingWriteInterests() {
+    SeriputConnection conn;
+    while ((conn = this.writePendingConnections.poll()) != null) {
+      conn.clearEnqueued();
+      SelectionKey key = conn.selectionKey();
+      if (key != null && key.isValid()) {
         key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-      } else {
-        key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
       }
     }
   }

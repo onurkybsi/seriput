@@ -20,15 +20,16 @@ import io.seriput.server.fixture.PipeByteChannel;
 import io.seriput.server.serialization.response.ResponseSerializer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
+import java.nio.channels.Pipe;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -55,17 +56,24 @@ final class SeriputConnectionTest {
 
   private ByteChannel connection;
   private Selector selector;
+  private Pipe.SinkChannel sinkChannel;
+  private SelectionKey selectionKey;
 
   @BeforeEach
   void setUp() throws IOException {
     this.connection = new PipeByteChannel();
     this.selector = Selector.open();
+    Pipe pipe = Pipe.open();
+    this.sinkChannel = pipe.sink();
+    this.sinkChannel.configureBlocking(false);
+    this.selectionKey = this.sinkChannel.register(this.selector, 0);
   }
 
   @AfterEach
   void cleanUp() throws IOException {
     this.connection.close();
     this.selector.close();
+    this.sinkChannel.close();
   }
 
   @Nested
@@ -78,7 +86,14 @@ final class SeriputConnectionTest {
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
       var underTest =
-          new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
+          new SeriputConnection(
+              allocator,
+              client,
+              0,
+              connection,
+              requestHandler,
+              selectionKey,
+              new ConcurrentLinkedQueue<>());
 
       byte[] requestPart1 = new byte[numOfBytesToReadAtFirst];
       byte[] requestPart2 = new byte[testPutRequestPayload.length - numOfBytesToReadAtFirst];
@@ -109,20 +124,27 @@ final class SeriputConnectionTest {
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
       var underTest =
-          new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
+          new SeriputConnection(
+              allocator,
+              client,
+              0,
+              connection,
+              requestHandler,
+              selectionKey,
+              new ConcurrentLinkedQueue<>());
       connection.write(ByteBuffer.wrap(testPutRequestPayload));
 
       // when
       underTest.read(); // Reads the full request
-      await().until(underTest::isReadyToWrite); // Request is handled
+      await().until(underTest::isEnqueued); // Request is handled
       underTest.write(); // Writes the full response
-      await().until(() -> !underTest.isReadyToWrite()); // Response is written
+      await().until(() -> !underTest.isEnqueued()); // Response is written
       underTest.read(); // Nothing to read, nothing to do
 
       // then
       verify(requestHandler, times(1)).handle(any());
       verifyNoMoreInteractions(requestHandler);
-      assertThat(underTest.isReadyToWrite()).isFalse();
+      assertThat(underTest.isEnqueued()).isFalse();
     }
 
     @Test
@@ -131,7 +153,14 @@ final class SeriputConnectionTest {
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
       var underTest =
-          new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
+          new SeriputConnection(
+              allocator,
+              client,
+              0,
+              connection,
+              requestHandler,
+              selectionKey,
+              new ConcurrentLinkedQueue<>());
       connection.close();
 
       // when
@@ -152,7 +181,14 @@ final class SeriputConnectionTest {
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
       var underTest =
-          new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
+          new SeriputConnection(
+              allocator,
+              client,
+              0,
+              connection,
+              requestHandler,
+              selectionKey,
+              new ConcurrentLinkedQueue<>());
       underTest.state(state);
 
       // when & then
@@ -175,7 +211,8 @@ final class SeriputConnectionTest {
               0,
               connection,
               new RequestHandlerImpl(responseSerializer, emptyList()),
-              selector);
+              selectionKey,
+              new ConcurrentLinkedQueue<>());
 
       var requests =
           ByteBuffer.wrap(
@@ -192,7 +229,7 @@ final class SeriputConnectionTest {
           .until(
               () -> {
                 underTest.write();
-                return !underTest.isReadyToWrite(); // Writing is finished
+                return !underTest.isEnqueued(); // Writing is finished
               });
 
       // then
@@ -229,7 +266,14 @@ final class SeriputConnectionTest {
       when(requestHandler.handle(any()))
           .thenReturn(responseSerializer.notFound(), responseSerializer.notFound());
       var underTest =
-          new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
+          new SeriputConnection(
+              allocator,
+              client,
+              0,
+              connection,
+              requestHandler,
+              selectionKey,
+              new ConcurrentLinkedQueue<>());
 
       var requests = ByteBuffer.wrap(Bytes.concat(testGetRequestPayload, testDeleteRequestPayload));
       while (connection.write(requests) > 0) { // Client writes the full requests
@@ -243,7 +287,7 @@ final class SeriputConnectionTest {
           .until(
               () -> {
                 underTest.write();
-                return !underTest.isReadyToWrite(); //
+                return !underTest.isEnqueued(); // Writing is finished
               });
 
       // then
@@ -267,7 +311,14 @@ final class SeriputConnectionTest {
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.notFound());
       var underTest =
-          new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
+          new SeriputConnection(
+              allocator,
+              client,
+              0,
+              connection,
+              requestHandler,
+              selectionKey,
+              new ConcurrentLinkedQueue<>());
 
       var requests = ByteBuffer.wrap(Bytes.concat(testGetRequestPayload, testDeleteRequestPayload));
       connection.write(requests); // Client writes the full requests
@@ -287,8 +338,7 @@ final class SeriputConnectionTest {
     }
 
     @Test
-    void should_Disables_WriteInterest_When_NothingAvailable_To_Write()
-        throws NoSuchFieldException, IllegalAccessException {
+    void should_Clear_IsEnqueued_When_NothingAvailable_To_Write() throws IOException {
       // given
       var underTest =
           new SeriputConnection(
@@ -297,17 +347,17 @@ final class SeriputConnectionTest {
               0,
               connection,
               new RequestHandlerImpl(responseSerializer, emptyList()),
-              selector);
-      Field isReadToWriteField = SeriputConnection.class.getDeclaredField("isReadyToWrite");
-      isReadToWriteField.setAccessible(true);
-      AtomicBoolean isReadyToWrite = (AtomicBoolean) isReadToWriteField.get(underTest);
-      isReadyToWrite.set(true);
+              selectionKey,
+              new ConcurrentLinkedQueue<>());
+      connection.write(ByteBuffer.wrap(testGetRequestPayload));
+      underTest.read();
+      await().atMost(Duration.ofSeconds(1)).until(underTest::isEnqueued);
 
       // when
       underTest.write();
 
       // then
-      assertThat(underTest.isReadyToWrite()).isFalse();
+      assertThat(underTest.isEnqueued()).isFalse();
     }
 
     @ParameterizedTest
@@ -321,7 +371,14 @@ final class SeriputConnectionTest {
       var requestHandler = mock(RequestHandler.class);
       when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
       var underTest =
-          new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
+          new SeriputConnection(
+              allocator,
+              client,
+              0,
+              connection,
+              requestHandler,
+              selectionKey,
+              new ConcurrentLinkedQueue<>());
       underTest.state(state);
 
       // when & then
@@ -348,7 +405,14 @@ final class SeriputConnectionTest {
               }
             });
     var underTest =
-        new SeriputConnection(allocator, client, 0, connection, requestHandler, selector);
+        new SeriputConnection(
+            allocator,
+            client,
+            0,
+            connection,
+            requestHandler,
+            selectionKey,
+            new ConcurrentLinkedQueue<>());
     // Client writes the full requests
     connection.write(ByteBuffer.wrap(Bytes.concat(testPutRequestPayload, testGetRequestPayload)));
 

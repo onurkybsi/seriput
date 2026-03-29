@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.Selector;
+import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -33,13 +33,14 @@ final class SeriputConnection {
   private final ByteChannel connection;
   private final Queue<byte[]> frameBufferPool = new ConcurrentLinkedQueue<>();
   private final BlockingQueue<byte[]> inboundQueue = new LinkedBlockingQueue<>();
-  private final AtomicBoolean isReadyToWrite = new AtomicBoolean(false);
+  private final AtomicBoolean isEnqueued = new AtomicBoolean(false);
   private final Queue<ByteBuffer> outboundQueue = new ConcurrentLinkedQueue<>();
   // TODO: 8KB buffer, make configurable
   private final ByteBuffer readBuffer = ByteBuffer.allocate(8192);
   private final RequestHandler requestHandler;
-  private final Selector selector;
+  private final SelectionKey selectionKey;
   private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
+  private final Queue<SeriputConnection> writePendingConnections; // From SeriputServer
   private final Thread workerThread;
 
   // endregion
@@ -50,13 +51,15 @@ final class SeriputConnection {
       int clientConnectionIx,
       ByteChannel connection,
       RequestHandler requestHandler,
-      Selector selector) {
+      SelectionKey selectionKey,
+      Queue<SeriputConnection> writePendingConnections) {
     this.allocator = allocator;
     this.client = client;
     this.clientConnectionIx = clientConnectionIx;
     this.connection = connection;
     this.requestHandler = requestHandler;
-    this.selector = selector;
+    this.selectionKey = selectionKey;
+    this.writePendingConnections = writePendingConnections;
     this.workerThread = this.startWorkerThread();
   }
 
@@ -67,6 +70,18 @@ final class SeriputConnection {
 
   ByteChannel connection() {
     return this.connection;
+  }
+
+  void clearEnqueued() {
+    this.isEnqueued.set(false);
+  }
+
+  boolean isEnqueued() {
+    return this.isEnqueued.get();
+  }
+
+  SelectionKey selectionKey() {
+    return this.selectionKey;
   }
 
   State state() {
@@ -109,8 +124,12 @@ final class SeriputConnection {
         this.outboundQueue.remove();
         this.allocator.release(response);
       }
-      // No more buffers left to write, tell the event loop, no interest to write!
-      this.isReadyToWrite.compareAndSet(true, false);
+
+      // No more buffers left to write: clear OP_WRITE directly and allow re-enqueuing
+      if (this.selectionKey.isValid()) {
+        this.selectionKey.interestOps(this.selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
+      }
+      this.isEnqueued.set(false);
     } catch (IOException e) {
       if (e instanceof ClosedChannelException) {
         logger.warn(
@@ -121,17 +140,6 @@ final class SeriputConnection {
       this.state.compareAndSet(
           State.OPEN, State.CLOSING); // SeriputServer is going to close the connection
     }
-  }
-
-  /**
-   * Returns whether the connection is ready and needs to write.
-   *
-   * @return {@code true} if ready to write, {@code false} otherwise
-   */
-  boolean isReadyToWrite() {
-    return State.OPEN.equals(this.state.get())
-        && this.isReadyToWrite.get()
-        && !this.outboundQueue.isEmpty();
   }
 
   private boolean doRead() {
@@ -191,9 +199,10 @@ final class SeriputConnection {
                   ByteBuffer response = this.requestHandler.handle(request);
                   this.releaseFrameBuffer(request);
                   this.outboundQueue.add(response);
-                  if (this.isReadyToWrite.compareAndSet(
-                      false, true)) { // In order to prevent unnecessary selector.wakeup() calls
-                    this.selector.wakeup();
+                  // Enqueue once per empty→non-empty transition to avoid redundant wakeups
+                  if (this.isEnqueued.compareAndSet(false, true)) {
+                    this.writePendingConnections.add(this);
+                    this.selectionKey.selector().wakeup();
                   }
                 } catch (Exception e) {
                   if (e instanceof InterruptedException && this.state.get().isClosureInProgress()) {
