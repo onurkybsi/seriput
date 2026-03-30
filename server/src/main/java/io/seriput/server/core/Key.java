@@ -7,20 +7,29 @@ package io.seriput.server.core;
  *
  * <ul>
  *   <li><b>Owning mode</b> — created via {@link #Key(KeyType, byte[])}, the key owns the entire
- *       byte array.
+ *       byte array. The hash code is computed eagerly at construction.
  *   <li><b>View mode</b> — created via {@link #view(KeyType, byte[], int, int)}, the key references
- *       a slice of a shared byte array without copying. Suitable for transient lookups (GET,
- *       DELETE) where the key is not stored.
+ *       a slice of a shared byte array without copying. The hash code is computed lazily on first
+ *       access. Suitable for transient lookups (GET, DELETE) where the key is not stored.
  * </ul>
- *
- * @param type type of the key
- * @param bytes raw bytes backing the key
- * @param offset start offset within {@code bytes}
- * @param length number of bytes representing the key
  */
-public record Key(KeyType type, byte[] bytes, int offset, int length) {
+public final class Key {
+  private final KeyType type;
+  private final byte[] bytes;
+  private final int offset;
+  private final int length;
+  private int hash;
+
+  public Key(KeyType type, byte[] bytes, int offset, int length) {
+    this.type = type;
+    this.bytes = bytes;
+    this.offset = offset;
+    this.length = length;
+  }
+
   public Key(KeyType type, byte[] bytes) {
     this(type, bytes, 0, bytes.length);
+    this.hash = computeHashCode();
   }
 
   /**
@@ -30,6 +39,22 @@ public record Key(KeyType type, byte[] bytes, int offset, int length) {
    */
   public static Key view(KeyType type, byte[] bytes, int offset, int length) {
     return new Key(type, bytes, offset, length);
+  }
+
+  public KeyType type() {
+    return type;
+  }
+
+  public byte[] bytes() {
+    return bytes;
+  }
+
+  public int offset() {
+    return offset;
+  }
+
+  public int length() {
+    return length;
   }
 
   @Override
@@ -45,6 +70,15 @@ public record Key(KeyType type, byte[] bytes, int offset, int length) {
 
   @Override
   public int hashCode() {
+    int h = this.hash;
+    if (h == 0) {
+      h = computeHashCode();
+      this.hash = h;
+    }
+    return h;
+  }
+
+  private int computeHashCode() {
     int h = 1;
     for (int i = offset; i < offset + length; i++) {
       h = 31 * h + bytes[i];
