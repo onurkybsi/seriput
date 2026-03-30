@@ -6,6 +6,7 @@ import static io.seriput.common.serialization.response.ResponseDeserializer.head
 import io.seriput.client.exception.ConnectionClosedException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -46,6 +47,7 @@ final class SeriputConnection implements AutoCloseable {
     this.callbackExecutor = callbackExecutor;
     this.channel = SocketChannel.open();
     this.channel.configureBlocking(true);
+    this.channel.setOption(StandardSocketOptions.TCP_NODELAY, true);
     this.channel.connect(new InetSocketAddress(host, port));
     this.channel.configureBlocking(false);
     this.readBuffer = ByteBuffer.allocate(readBufferSize);

@@ -4,6 +4,7 @@ import io.seriput.common.PooledByteBufferAllocator;
 import io.seriput.server.serialization.response.ResponseSerializer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -164,6 +165,7 @@ public final class SeriputServer implements AutoCloseable {
     var client = SeriputClient.from(connection);
     var clientConnections = this.connections.getOrDefault(client, new HashSet<>());
     connection.configureBlocking(false);
+    connection.setOption(StandardSocketOptions.TCP_NODELAY, true);
     var connectionKey = connection.register(this.selector, SelectionKey.OP_READ);
     var seriputConnection =
         new SeriputConnection(
