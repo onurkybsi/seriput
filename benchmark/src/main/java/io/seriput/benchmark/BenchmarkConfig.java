@@ -21,17 +21,20 @@ record BenchmarkConfig(int port, int concurrency, int warmupSec, int testSec, in
   }
 
   static BenchmarkConfig fromArgs(String[] args) {
+    int port = DEFAULT_PORT;
     int concurrency = DEFAULT_CONCURRENCY;
     int targetRps = DEFAULT_TARGET_RPS;
 
-    if (args.length >= 1) {
-      concurrency = Integer.parseInt(args[0]);
-    }
-    if (args.length >= 2) {
-      targetRps = Integer.parseInt(args[1]);
+    for (String arg : args) {
+      String[] parts = arg.split("=", 2);
+      switch (parts[0]) {
+        case "port" -> port = Integer.parseInt(parts[1]);
+        case "concurrency" -> concurrency = Integer.parseInt(parts[1]);
+        case "targetRps" -> targetRps = Integer.parseInt(parts[1]);
+        default -> throw new IllegalArgumentException("Unknown argument: " + parts[0]);
+      }
     }
 
-    return new BenchmarkConfig(
-        DEFAULT_PORT, concurrency, DEFAULT_WARMUP_SEC, DEFAULT_TEST_SEC, targetRps);
+    return new BenchmarkConfig(port, concurrency, DEFAULT_WARMUP_SEC, DEFAULT_TEST_SEC, targetRps);
   }
 }

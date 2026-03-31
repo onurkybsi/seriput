@@ -15,7 +15,7 @@ Throughput benchmarks for the Seriput cache server, measuring GET, PUT, and DELE
 ./gradlew :benchmark:runDeleteThroughput
 ```
 
-Pass custom parameters with `-Pconcurrency=64 -PtargetRps=80000`. Defaults: `concurrency=128`, `targetRps=120000`.
+Pass custom parameters with `-Pport=9091 -Pconcurrency=64 -PtargetRps=80000`. Defaults: `port=9090`, `concurrency=128`, `targetRps=120000`.
 
 ## Results
 

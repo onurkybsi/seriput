@@ -24,8 +24,9 @@ fun registerBenchmarkTask(name: String, mainClassName: String) {
         classpath = sourceSets["main"].runtimeClasspath
         mainClass.set(mainClassName)
         args = listOfNotNull(
-            project.findProperty("concurrency")?.toString(),
-            project.findProperty("targetRps")?.toString()
+            project.findProperty("port")?.let { "port=$it" },
+            project.findProperty("concurrency")?.let { "concurrency=$it" },
+            project.findProperty("targetRps")?.let { "targetRps=$it" }
         )
     }
 }
