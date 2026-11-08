@@ -100,9 +100,6 @@ final class SeriputConnection {
 
   /** Reads as much as data available from the connection open with the client. */
   void read() {
-    if (this.state.get() != State.OPEN) {
-      throw new IllegalStateException("Unexpected connection state: " + this.state.get());
-    }
     if (!doRead()) return;
     maybeDispatch();
     // TODO: Add readBuffer capacity check!
@@ -110,9 +107,6 @@ final class SeriputConnection {
 
   /** Writes the pending responses to the connection open with the client. */
   void write() {
-    if (!State.OPEN.equals(this.state.get())) {
-      throw new IllegalStateException("Unexpected connection state: " + this.state.get());
-    }
     try {
       ByteBuffer response;
       while ((response = this.outboundQueue.peek()) != null) {

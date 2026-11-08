@@ -1,0 +1,47 @@
+@startuml
+title Seriput server connection lifecycle
+
+hide empty description
+skinparam shadowing false
+
+state "OPEN" as Open
+state "CLOSING" as Closing
+state "CLOSED" as Closed
+
+[*] --> Open : SeriputConnection constructed\nThread: server
+
+Open --> Closing : Peer closes connection (read returns -1)\nThread: server
+Open --> Closing : Read fails with IOException\nThread: server
+Open --> Closing : Write fails with IOException\nThread: server
+Open --> Closing : Server shutdown begins\nThread: server
+
+Closing --> Closed : Selection key cancelled, worker interrupted,\nchannel closed, and cleanup completed\nThread: server
+
+Closed --> [*]
+
+note right of Open
+  The per-connection virtual worker thread:
+  * handles requests
+  * queues responses
+  * requests OP_WRITE through the pending queue
+  * observes the connection state
+
+  It does not apply a lifecycle state transition.
+end note
+
+note right of Closing
+  During normal event-loop operation, maybeClose()
+  performs cleanup after read() or write() changes
+  the state to CLOSING.
+
+  During server shutdown, closeConnections()
+  applies both OPEN -> CLOSING and
+  CLOSING -> CLOSED.
+end note
+
+legend bottom
+  All lifecycle transitions are currently applied by the
+  Seriput server thread named "server".
+endlegend
+
+@enduml

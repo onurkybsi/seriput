@@ -4,7 +4,6 @@ import static io.seriput.server.fixture.RequestFixtures.*;
 import static io.seriput.server.fixture.ResponseFixtures.deserialize;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -35,7 +34,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import tools.jackson.databind.node.ObjectNode;
@@ -168,33 +166,6 @@ final class SeriputConnectionTest {
 
       // then
       assertThat(underTest.state()).isEqualTo(SeriputConnection.State.CLOSING);
-    }
-
-    @ParameterizedTest
-    @EnumSource(
-        value = SeriputConnection.State.class,
-        mode = EnumSource.Mode.EXCLUDE,
-        names = {"OPEN"})
-    void should_Throw_IllegalStateException_When_ConnectionState_Is_Other_Than_OPEN(
-        SeriputConnection.State state) {
-      // given
-      var requestHandler = mock(RequestHandler.class);
-      when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
-      var underTest =
-          new SeriputConnection(
-              allocator,
-              client,
-              0,
-              connection,
-              requestHandler,
-              selectionKey,
-              new ConcurrentLinkedQueue<>());
-      underTest.state(state);
-
-      // when & then
-      assertThatThrownBy(underTest::read)
-          .isInstanceOfAny(IllegalStateException.class)
-          .hasMessage("Unexpected connection state: " + state);
     }
   }
 
@@ -358,33 +329,6 @@ final class SeriputConnectionTest {
 
       // then
       assertThat(underTest.isEnqueued()).isFalse();
-    }
-
-    @ParameterizedTest
-    @EnumSource(
-        value = SeriputConnection.State.class,
-        mode = EnumSource.Mode.EXCLUDE,
-        names = {"OPEN"})
-    void should_Throw_IllegalStateException_When_ConnectionState_Is_Other_Than_OPEN(
-        SeriputConnection.State state) {
-      // given
-      var requestHandler = mock(RequestHandler.class);
-      when(requestHandler.handle(any())).thenReturn(responseSerializer.ok());
-      var underTest =
-          new SeriputConnection(
-              allocator,
-              client,
-              0,
-              connection,
-              requestHandler,
-              selectionKey,
-              new ConcurrentLinkedQueue<>());
-      underTest.state(state);
-
-      // when & then
-      assertThatThrownBy(underTest::write)
-          .isInstanceOfAny(IllegalStateException.class)
-          .hasMessage("Unexpected connection state: " + state);
     }
   }
 
