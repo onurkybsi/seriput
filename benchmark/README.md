@@ -1,26 +1,26 @@
-# Benchmark
+# GET benchmark
 
-Throughput benchmarks for the Seriput cache server, measuring GET, PUT, and DELETE operations.
+This module measures GET throughput and latency against a Seriput server running at
+`127.0.0.1:8080`.
 
-## Requirements
-
-- Java 25
-- No external server needed — benchmarks start an embedded server on port 9090
+The fixed workload uses 50 persistent connections, 10,000 warm-up requests, and 100,000 measured
+requests for one hot key containing the JSON value `"x"`.
 
 ## Running
 
+Start the server:
+
 ```bash
-./gradlew :benchmark:runGetThroughput
-./gradlew :benchmark:runPutThroughput
-./gradlew :benchmark:runDeleteThroughput
+./gradlew :server:run
 ```
 
-Pass custom parameters with `-Pport=9091 -Pconcurrency=64 -PtargetRps=80000`. Defaults: `port=9090`, `concurrency=128`, `targetRps=120000`.
+In another terminal, run the benchmark:
 
-## Results
+```bash
+./gradlew :benchmark:runGetBenchmark
+```
 
-Each benchmark writes results in JSONL format:
+Each successful run prints a summary and appends a row to `benchmark/get-benchmark-results.csv`.
 
-- `get-throughput-results.jsonl`
-- `put-throughput-results.jsonl`
-- `delete-throughput-results.jsonl`
+For comparisons, run the benchmark several times before and after a change and compare median
+throughput and latency percentiles under the same machine and JDK conditions.

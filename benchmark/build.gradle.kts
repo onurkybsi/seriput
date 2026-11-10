@@ -3,30 +3,16 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":client"))
     implementation(project(":common"))
-    implementation(project(":server"))
     implementation("org.hdrhistogram:HdrHistogram:2.1.12")
 
-    testImplementation("com.google.guava:guava:${Versions.GUAVA}")
-    testImplementation("org.awaitility:awaitility:${Versions.AWAITILITY}")
-    testImplementation("org.mockito:mockito-core:${Versions.MOCKITO}")
-    testImplementation("org.mockito:mockito-junit-jupiter:${Versions.MOCKITO}")
+    testImplementation(project(":server"))
 }
 
-registerBenchmarkTask("runGetThroughput", "io.seriput.benchmark.GetThroughputBenchmark")
-registerBenchmarkTask("runPutThroughput", "io.seriput.benchmark.PutThroughputBenchmark")
-registerBenchmarkTask("runDeleteThroughput", "io.seriput.benchmark.DeleteThroughputBenchmark")
-
-fun registerBenchmarkTask(name: String, mainClassName: String) {
-    tasks.register<JavaExec>(name) {
-        group = "benchmark"
-        classpath = sourceSets["main"].runtimeClasspath
-        mainClass.set(mainClassName)
-        args = listOfNotNull(
-            project.findProperty("port")?.let { "port=$it" },
-            project.findProperty("concurrency")?.let { "concurrency=$it" },
-            project.findProperty("targetRps")?.let { "targetRps=$it" }
-        )
-    }
+tasks.register<JavaExec>("runGetBenchmark") {
+    group = "benchmark"
+    description = "Runs the Seriput GET benchmark."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass = "io.seriput.benchmark.SeriputGetBenchmark"
+    workingDir = rootProject.projectDir
 }
